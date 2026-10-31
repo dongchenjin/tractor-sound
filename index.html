@@ -493,33 +493,18 @@
     text-align: center; line-height: 1.6;
   }
 
-  /* ---- 首启隐私授权弹窗 ---- */
-  #privMask {
-    position: fixed; inset: 0; z-index: 60; display: none;
-    background: rgba(3,7,12,.93); backdrop-filter: blur(4px);
-    align-items: center; justify-content: center; padding: 16px;
+  /* ---- 关于内的隐私政策折叠区 ---- */
+  .priv-toggle {
+    width: 100%; margin-top: 4px; padding: 8px 0; border-radius: 9px; cursor: pointer;
+    font-size: 11.5px; letter-spacing: .3px; color: #8fd8ee;
+    background: rgba(0,229,255,.08); border: 1px solid rgba(0,229,255,.32);
   }
-  #privMask.show { display: flex; }
-  .priv-card {
-    width: min(93vw, 380px); max-height: 90vh; display: flex; flex-direction: column;
-    background: linear-gradient(160deg, #0d1b2a, #0a1320 60%, #0d1a28);
-    border: 1px solid rgba(0,229,255,.4); border-radius: 18px;
-    box-shadow: 0 0 34px rgba(0,229,255,.24), 0 18px 50px rgba(0,0,0,.75);
-    padding: 16px 15px 13px; text-align: left;
-  }
-  .priv-card h2 {
-    margin: 0 0 3px; font-size: 16px; color: #4de4ff; text-align: center;
-    text-shadow: 0 0 10px rgba(0,229,255,.6);
-  }
-  .priv-hint {
-    font-size: 10.5px; color: #6e93ad; text-align: center;
-    margin-bottom: 9px; letter-spacing: .3px;
-  }
+  .priv-toggle:active { background: rgba(0,229,255,.18); }
+  .priv-fold { display: none; margin-top: 9px; }
+  .priv-fold.show { display: block; }
   .priv-scroll {
-    flex: 1 1 auto; overflow-y: auto; min-height: 0;
     padding: 10px 11px; border-radius: 12px;
     background: rgba(0,20,32,.55); border: 1px solid rgba(0,229,255,.16);
-    -webkit-overflow-scrolling: touch;
   }
   .priv-scroll h3 {
     font-size: 11.5px; color: #7fe6ff; margin: 9px 0 4px; letter-spacing: .5px;
@@ -530,18 +515,6 @@
   }
   .priv-scroll ul { margin: 0 0 4px; padding-left: 15px; }
   .priv-scroll b { color: #ffd76a; font-weight: normal; }
-  .priv-btns { display: flex; gap: 8px; margin-top: 12px; }
-  .priv-btns button {
-    padding: 11px 0; border-radius: 11px; font-size: 12.5px; cursor: pointer;
-    border: 1px solid rgba(0,229,255,.4); background: rgba(0,229,255,.08); color: #8fd8ee;
-  }
-  #privAgree {
-    flex: 1.25; border: none; font-weight: bold; color: #05121c;
-    background: linear-gradient(180deg, #7de8ff, #12a8cf);
-    box-shadow: 0 0 14px rgba(0,200,255,.35);
-  }
-  #privManual { flex: 1; }
-  body.no-gps .gps-switch { opacity: .4; }
 
   /* ---- 语言切换 ---- */
   #langBtn {
@@ -637,7 +610,7 @@
   </div>
 
   <div class="foot">
-    <span><span id="footNote">0~200 km/h · 请先调低音量</span> · <b id="verTag">v2.7</b></span>
+    <span><span id="footNote">0~200 km/h · 请先调低音量</span> · <b id="verTag">v2.8</b></span>
     <button class="about-btn" id="aboutBtn">关于</button>
     <button class="tip-btn" id="tipBtn">☕ 赏口油钱</button>
   </div>
@@ -684,56 +657,11 @@
     </div>
 
     <div class="about-sec">
-      <h3 id="abPrivH">隐私与授权</h3>
+      <h3 id="abPrivH">隐私政策</h3>
       <p id="abPrivP">本软件不收集个人信息；仅在你打开 GPS 跟速时于本机读取速度，不上传不存储。</p>
-      <p style="margin-top:3px;font-size:11.5px;color:#9dbcce;"><span id="abPrivStateL">当前状态：</span><b id="privState">未选择</b></p>
-      <button id="privReopen" style="margin-top:6px;width:100%;padding:8px 0;border-radius:9px;font-size:11.5px;cursor:pointer;color:#8fd8ee;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.32);">查看《隐私政策》 / 重新授权</button>
-    </div>
-
-    <div class="about-btns">
-      <button id="aboutDone">知道啦 · 突突去</button>
-    </div>
-    <div class="about-copy" id="abCopy">© 2026 手扶拖拉机声浪模拟器 · 保留所有权利</div>
-  </div>
-</div>
-
-<!-- 打赏弹窗（完全自愿，不打赏功能照常） -->
-<div id="tipMask">
-  <div class="tip-card">
-    <button class="tip-close" id="tipClose">✕</button>
-    <div class="tip-free" id="tipFree">
-      先说清楚：这拖拉机<b>免费骑到天荒地老</b>，一分不掏也照样突突！<br>
-      只是它今天油耗有点高，缸垫还在漏风……你懂的 🛢️<br>
-      （本次弹出纯属巧合，以后再也不会自动打扰，纯手动营业）
-    </div>
-    <h2 id="tipTitle">给拖拉机加点柴油</h2>
-    <div class="tip-sub" id="tipSub">免费玩的 · 突突得带劲就赏口油钱 · 不赏也照突</div>
-    <div class="tip-tabs">
-      <button id="tabWx" class="on wx">微信支付</button>
-      <button id="tabZfb" class="zfb">支付宝</button>
-    </div>
-    <div class="tip-qr"><img id="tipQrImg" src="assets/tip_wechat.jpg" alt="收款码"></div>
-    <div class="tip-amts" id="tipAmts"></div>
-    <div class="tip-quip" id="tipQuip"></div>
-    <div class="tip-btns">
-      <button id="tipSaveBtn">保存收款码</button>
-      <button id="tipPaidBtn">我已打赏 🎖️</button>
-    </div>
-    <div class="tip-note" id="tipNote">
-      保存后：打开微信/支付宝 → 扫一扫 → 右上角「相册」选这张图<br>
-      不打赏完全不影响使用，一分钱也是对拖拉机瘦瘦身材的认可
-    </div>
-  </div>
-</div>
-<div class="tip-toast" id="tipToast"></div>
-<canvas id="smoke" aria-hidden="true"></canvas>
-
-<!-- 首次启动：隐私政策提示与授权（合规必需，不可点遮罩跳过） -->
-<div id="privMask">
-  <div class="priv-card">
-    <h2 id="privTitle">隐私政策与授权提示</h2>
-    <div class="priv-hint" id="privHint">开始使用前，请阅读并同意《隐私政策》</div>
-    <div class="priv-scroll" id="privScroll">
+      <button class="priv-toggle" id="privToggle">展开《隐私政策》全文 ▾</button>
+      <div class="priv-fold" id="privFold">
+        <div class="priv-scroll" id="privScroll">
       <h3>声明主体</h3>
       <p>本软件「手扶拖拉机声浪模拟器」（包名 <b>com.jinlaoda.tractor</b>）由<b>个人开发者</b>独立开发并运营，
       是本政策的唯一责任主体。本政策独立成文，独立于任何其他协议或声明，与软件实际功能、权限调用一一对应。
@@ -777,13 +705,48 @@
 
       <h3>九、政策更新</h3>
       <p>功能或权限发生变化时，本政策将同步更新并在应用内与本页面公布，注明更新日期；重大变更将再次征得你的同意。</p>
+    
+        </div>
+      </div>
     </div>
-    <div class="priv-btns">
-      <button id="privManual">仅手动模式</button>
-      <button id="privAgree">同意并继续</button>
+
+    <div class="about-btns">
+      <button id="aboutDone">知道啦 · 突突去</button>
+    </div>
+    <div class="about-copy" id="abCopy">© 2026 手扶拖拉机声浪模拟器 · 保留所有权利</div>
+  </div>
+</div>
+
+<!-- 打赏弹窗（完全自愿，不打赏功能照常） -->
+<div id="tipMask">
+  <div class="tip-card">
+    <button class="tip-close" id="tipClose">✕</button>
+    <div class="tip-free" id="tipFree">
+      先说清楚：这拖拉机<b>免费骑到天荒地老</b>，一分不掏也照样突突！<br>
+      只是它今天油耗有点高，缸垫还在漏风……你懂的 🛢️<br>
+      （本次弹出纯属巧合，以后再也不会自动打扰，纯手动营业）
+    </div>
+    <h2 id="tipTitle">给拖拉机加点柴油</h2>
+    <div class="tip-sub" id="tipSub">免费玩的 · 突突得带劲就赏口油钱 · 不赏也照突</div>
+    <div class="tip-tabs">
+      <button id="tabWx" class="on wx">微信支付</button>
+      <button id="tabZfb" class="zfb">支付宝</button>
+    </div>
+    <div class="tip-qr"><img id="tipQrImg" src="assets/tip_wechat.jpg" alt="收款码"></div>
+    <div class="tip-amts" id="tipAmts"></div>
+    <div class="tip-quip" id="tipQuip"></div>
+    <div class="tip-btns">
+      <button id="tipSaveBtn">保存收款码</button>
+      <button id="tipPaidBtn">我已打赏 🎖️</button>
+    </div>
+    <div class="tip-note" id="tipNote">
+      保存后：打开微信/支付宝 → 扫一扫 → 右上角「相册」选这张图<br>
+      不打赏完全不影响使用，一分钱也是对拖拉机瘦瘦身材的认可
     </div>
   </div>
 </div>
+<div class="tip-toast" id="tipToast"></div>
+<canvas id="smoke" aria-hidden="true"></canvas>
 
 <script>
 'use strict';
@@ -836,7 +799,8 @@ const I18N = {
     ],
     abContactH: '开发者联系方式', aboutCopy: '复制邮箱',
     abContactNote: '反馈 bug、提建议、想加什么声音，都欢迎来信；邮件标题带上「拖拉机」我会更快看到。',
-    abPrivH: '隐私与授权',
+    abPrivH: '隐私政策',
+    privShow: '展开《隐私政策》全文 ▾', privHide: '收起《隐私政策》▲',
     abPrivP: '本软件不收集个人信息；仅在你打开 GPS 跟速时于本机读取速度，不上传不存储。',
     abPrivStateL: '当前状态：', abPrivBtn: '查看《隐私政策》 / 重新授权',
     aboutDone: '知道啦 · 突突去',
@@ -910,7 +874,8 @@ const I18N = {
     ],
     abContactH: 'Contact the developer', aboutCopy: 'Copy email',
     abContactNote: 'Bug reports, ideas, requests for new sounds — all welcome. Put “tractor” in the subject and I will see it sooner.',
-    abPrivH: 'Privacy & permission',
+    abPrivH: 'Privacy policy',
+    privShow: 'Read the full privacy policy ▾', privHide: 'Collapse privacy policy ▲',
     abPrivP: 'This app collects no personal information. Speed is read on-device only while GPS speed mode is on, never uploaded or stored.',
     abPrivStateL: 'Status: ', abPrivBtn: 'View Privacy Policy / re-authorize',
     aboutDone: 'Got it · let it putt',
@@ -984,7 +949,8 @@ const I18N = {
     ],
     abContactH: '개발자 연락처', aboutCopy: '이메일 복사',
     abContactNote: '버그 신고, 제안, 추가하고 싶은 소리 모두 환영합니다. 제목에 「트랙터」를 넣어 주시면 더 빨리 봅니다.',
-    abPrivH: '개인정보 및 권한',
+    abPrivH: '개인정보 처리방침',
+    privShow: '개인정보 처리방침 전문 보기 ▾', privHide: '개인정보 처리방침 접기 ▲',
     abPrivP: '이 앱은 개인정보를 수집하지 않습니다. GPS 연동을 켰을 때만 기기에서 속도를 읽고, 업로드하거나 저장하지 않습니다.',
     abPrivStateL: '현재 상태: ', abPrivBtn: '개인정보 처리방침 보기 / 재승인',
     aboutDone: '알겠어요 · 출발',
@@ -1058,7 +1024,8 @@ const I18N = {
     ],
     abContactH: '開発者連絡先', aboutCopy: 'メールをコピー',
     abContactNote: '不具合報告・提案・追加してほしい音、どれも歓迎です。件名に「トラクター」と入れてくださると早く気づきます。',
-    abPrivH: 'プライバシーと権限',
+    abPrivH: 'プライバシーポリシー',
+    privShow: 'プライバシーポリシー全文を見る ▾', privHide: 'プライバシーポリシーを閉じる ▲',
     abPrivP: '本アプリは個人情報を収集しません。GPS連動をオンにしたときだけ端末内で速度を読み取り、送信も保存もしません。',
     abPrivStateL: '現在の状態: ', abPrivBtn: 'プライバシーポリシーを見る / 再許可',
     aboutDone: '了解 · 走るぞ',
@@ -2368,10 +2335,6 @@ function setGpsMode(on) {
   refreshHud();
 }
 gpsSwitch.addEventListener('click', () => {
-  if (privacyMode === 'manual') {
-    showToast(t('toastGpsLocked'));
-    return;
-  }
   setGpsMode(!state.gpsMode);
 });
 
@@ -2579,44 +2542,27 @@ document.getElementById('aboutCopy').addEventListener('click', () => {
   }
 });
 
-/* ================= 隐私政策：首启提示与授权 ================= */
-const privMask = document.getElementById('privMask');
+/* ================= 隐私政策：关于内折叠查看 ================= */
+const privFold = document.getElementById('privFold');
 const privScroll = document.getElementById('privScroll');
-const privState = document.getElementById('privState');
-const PRIV_KEY = 'jt_priv';
-let privacyMode = 'full';      // 'full' 允许定位 | 'manual' 仅手动模式
+const privToggle = document.getElementById('privToggle');
+let privOpen = false;
 
-function readPriv() {
-  try { return localStorage.getItem(PRIV_KEY) || ''; } catch (e) { return ''; }
-}
 function updateGpsLabel() {
   const lab = document.querySelector('#gpsSwitch .lab');
-  if (lab) lab.textContent = t('gps') + (privacyMode === 'manual' ? ' · ' + t('gpsOffTag') : '');
+  if (lab) lab.textContent = t('gps');
 }
-function applyPrivacyMode(mode) {
-  privacyMode = (mode === 'manual') ? 'manual' : 'full';
-  document.body.classList.toggle('no-gps', privacyMode === 'manual');
-  updateGpsLabel();
-  if (privacyMode === 'manual') stopGps(true);
-  if (privState) {
-    privState.textContent = privacyMode === 'manual' ? t('privManual') : t('privAgreed');
+function setPrivFold(open) {
+  privOpen = !!open;
+  privFold.classList.toggle('show', privOpen);
+  if (privToggle) privToggle.textContent = t(privOpen ? 'privHide' : 'privShow');
+  if (privOpen) {
+    requestAnimationFrame(() => {
+      try { privFold.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { privFold.scrollIntoView(); }
+    });
   }
 }
-function openPrivacy() {
-  privMask.classList.add('show');
-  if (privScroll) privScroll.scrollTop = 0;
-  requestAnimationFrame(() => { if (privScroll) privScroll.scrollTop = 0; });
-}
-function closePrivacy() { privMask.classList.remove('show'); }
-function acceptPrivacy(mode) {
-  try { localStorage.setItem(PRIV_KEY, mode); } catch (e) {}
-  applyPrivacyMode(mode);
-  closePrivacy();
-  showToast(t(mode === 'manual' ? 'toastPrivManual' : 'toastPrivAgree'));
-}
-document.getElementById('privAgree').addEventListener('click', () => acceptPrivacy('full'));
-document.getElementById('privManual').addEventListener('click', () => acceptPrivacy('manual'));
-document.getElementById('privReopen').addEventListener('click', openPrivacy);
+privToggle.addEventListener('click', () => setPrivFold(!privOpen));
 
 /* ================= 语言应用 ================= */
 const LANG_KEY = 'jt_lang';
@@ -2681,8 +2627,7 @@ function applyLang(lang) {
   setText('#abContactNote', t('abContactNote'));
   setText('#abPrivH', t('abPrivH'));
   setText('#abPrivP', t('abPrivP'));
-  setText('#abPrivStateL', t('abPrivStateL'));
-  setText('#privReopen', t('abPrivBtn'));
+  setPrivFold(privOpen);
   setText('#aboutDone', t('aboutDone'));
   setText('#abCopy', t('abCopy'));
 
@@ -2697,15 +2642,10 @@ function applyLang(lang) {
   setHTML('#tipNote', t('tipNote'));
   renderTipAmts();
 
-  /* 隐私弹窗 */
-  setText('#privTitle', t('privTitle'));
-  setText('#privHint', t('privHint'));
-  setText('#privManual', t('privManualBtn'));
-  setText('#privAgree', t('privAgree'));
+  /* 隐私政策正文 */
   renderPrivBody();
 
   /* 动态状态 */
-  if (privState) privState.textContent = (privacyMode === 'manual') ? t('privManual') : t('privAgreed');
   if (engine.state === 'running') setStatusK(state.gpsMode ? 'stRunningGps' : 'stRunning');
   else if (engine.state === 'off' || engine.state === 'stopping') setStatus(STATUS_IDLE());
   else setStatusK(lastStatus.key, lastStatus.map);
@@ -2730,13 +2670,6 @@ Array.prototype.forEach.call(langMenu.querySelectorAll('button'), function (b) {
 document.addEventListener('click', function (e) {
   if (!langMenu.contains(e.target) && e.target !== langBtn) langMenu.classList.remove('show');
 });
-
-/* 首次启动必须让用户阅读并选择，不做遮罩可关闭 */
-(function initPrivacy() {
-  const v = readPriv();
-  if (!v) openPrivacy();
-  else applyPrivacyMode(v);
-})();
 
 /* 应用语言（放最后，保证所有 DOM 与函数就绪） */
 applyLang(detectLang());
