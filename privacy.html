@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>手扶拖拉机声浪模拟器 · 隐私政策</title>
+<style>
+  body { margin: 0; background: #0b1420; color: #b8d2e2;
+         font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         line-height: 1.85; font-size: 15px; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 34px 22px 60px; }
+  h1 { color: #7de8ff; font-size: 22px; text-align: center; margin: 0 0 6px; }
+  .meta { text-align: center; color: #5f83a0; font-size: 12.5px; margin-bottom: 30px; letter-spacing: .5px; }
+  h2 { color: #9fe8ff; font-size: 16.5px; margin: 30px 0 10px; padding-left: 10px;
+       border-left: 3px solid #12a8cf; }
+  p, li { color: #a9c3d4; }
+  ul { padding-left: 22px; margin: 8px 0; }
+  li { margin-bottom: 7px; }
+  b { color: #ffd76a; font-weight: 600; }
+  .hl { background: rgba(255,215,106,.08); border: 1px dashed rgba(255,210,90,.4);
+        border-radius: 10px; padding: 12px 16px; margin: 14px 0; font-size: 14px; }
+  .fill { background: rgba(255,120,120,.12); border: 1px dashed rgba(255,120,120,.55);
+          border-radius: 6px; padding: 0 6px; color: #ff9a9a; }
+  .mail { color: #9dfff0; font-family: Consolas, monospace; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13.5px; }
+  th, td { border: 1px solid rgba(0,229,255,.25); padding: 8px 10px; text-align: left; color: #a9c3d4; }
+  th { color: #7de8ff; background: rgba(0,229,255,.06); font-weight: 600; }
+  footer { margin-top: 46px; text-align: center; color: #4d6a80; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>手扶拖拉机声浪模拟器 · 隐私政策</h1>
+  <div class="meta">更新日期：2026 年 10 月 31 日 &nbsp;|&nbsp; 生效日期：2026 年 10 月 31 日 &nbsp;|&nbsp; 版本：V1.1</div>
+
+  <p>欢迎使用「手扶拖拉机声浪模拟器」（以下简称"本软件"）。请在使用前仔细阅读本政策，
+  <b>重点内容已用醒目标注</b>。你开启 GPS 跟速或点击"同意并继续"，即表示已理解并同意本政策全部内容。</p>
+
+  <h2>零、声明主体与政策独立性</h2>
+  <ul>
+    <li><b>本软件由个人开发者 <span class="fill">〔开发者真实姓名，发布前请替换〕</span> 独立开发并运营</b>，是本软件个人信息处理活动的唯一责任主体，联系方式见文末。</li>
+    <li>本政策<b>独立成文</b>，不附属于、不混同于任何用户协议或其他声明；其内容与软件实际功能、权限调用<b>一一对应、保持一致</b>。</li>
+    <li>本政策适用于「手扶拖拉机声浪模拟器」全部版本（包名 <b>com.jinlaoda.tractor</b>）。</li>
+  </ul>
+
+  <h2>一、我们收集哪些信息（收集清单）</h2>
+  <ul>
+    <li><b>本软件不收集、不存储、不上传任何个人信息。</b>本软件<b>没有注册 / 登录体系</b>，无需你提供手机号、姓名、身份证件等任何个人身份信息。</li>
+    <li><b>位置信息（仅在使用"GPS 跟速"功能时）：</b>当你主动开启 GPS 跟速模式，本软件调用系统定位接口获取实时速度数据。<b>该数据仅在本机内用于换算发动机转速与声浪，不上传至任何服务器，不存储、不缓存、不与任何第三方共享，不用于用户画像。</b>关闭 GPS 跟速或拒绝定位授权后，本软件可通过手动油门滑条完整使用全部功能。</li>
+    <li><b>本地存储的数据（非个人信息）：</b>浏览器本地存储（localStorage）仅保存功能性偏好：着车次数计数、提示是否已展示、彩蛋状态、本次授权选择。仅保存在你的设备上，清除应用数据或卸载即完全删除，开发者无法读取。</li>
+  </ul>
+
+  <h2>二、权限与第三方说明（与实际调用一致）</h2>
+  <table>
+    <tr><th>权限</th><th>用途</th><th>触发时机</th></tr>
+    <tr><td>精确定位（ACCESS_FINE_LOCATION）</td><td>获取实时移动速度，驱动声浪</td><td>仅开启 GPS 跟速时</td></tr>
+    <tr><td>模糊定位（ACCESS_COARSE_LOCATION）</td><td>同上（低精度备选）</td><td>仅开启 GPS 跟速时</td></tr>
+    <tr><td>网络（INTERNET）</td><td>仅用于本机内部加载界面素材（127.0.0.1 本地回环），<b>不连接任何外部服务器</b></td><td>应用运行期间（仅本机）</td></tr>
+  </table>
+  <ul>
+    <li>本软件<b>不接入任何第三方 SDK</b>，不包含统计、广告、推送组件，不进行任何网络数据传输，<b>不进行个性化推荐、不投放广告、不做定向推送</b>。</li>
+    <li>本软件不申请相机、麦克风、通讯录、短信、通话记录、存储（读写外部存储）等权限。</li>
+  </ul>
+
+  <div class="hl">
+    <b>一句话总结：</b>完全离线运行；唯一敏感权限是定位（仅 GPS 跟速模式、仅本地计算、拒绝即不可用但不影响其他功能）。
+  </div>
+
+  <h2>三、信息的存储与保护</h2>
+  <ul>
+    <li>本软件无服务器、无云端，不存在个人信息存储与网络传输环节。</li>
+    <li>本地偏好数据仅存在于你的设备中，我们无法接触。</li>
+  </ul>
+
+  <h2>四、账号、注销与撤回同意</h2>
+  <ul>
+    <li>本软件<b>无注册、登录与账号体系，因此不存在账号注销流程</b>。</li>
+    <li><b>删除本地数据 / 撤回授权：</b>在系统设置中清除本应用数据或卸载应用即可，即时生效；也可在「系统设置 → 应用 → 权限管理」中随时关闭定位授权。</li>
+    <li>应用内路径：首次启动的授权弹窗可选择「仅手动模式」（不调用定位）；之后可随时在「关于 → 查看隐私政策 / 重新授权」中更改选择。</li>
+    <li>如需我们协助处理删除请求，请发邮件至下方邮箱，我们将在 <b>15 个工作日</b>内处理并回复。</li>
+  </ul>
+
+  <h2>五、你的权利</h2>
+  <ul>
+    <li>你有权查阅、更正、删除个人信息（本软件不收集个人信息），有权撤回授权、拒绝个性化处理（本软件无任何个性化处理）。</li>
+    <li>对本政策或个人信息处理有疑问、意见或投诉，请通过下方邮箱联系我们，15 个工作日内回复。</li>
+    <li>如你对处理结果不满意，可向网信、电信、公安等主管部门投诉、举报。</li>
+  </ul>
+
+  <h2>六、未成年人保护与儿童信息</h2>
+  <ul>
+    <li>本软件为声音模拟娱乐工具，<b>不面向儿童设计，不以任何方式收集儿童（不满 14 周岁）个人信息</b>。</li>
+    <li>若使用者为不满 14 周岁的儿童，<b>应在监护人陪同、同意并指导下使用</b>，并注意控制音量与使用时长。</li>
+    <li>监护人如发现儿童在未经监护人同意的情况下使用了本软件，或对儿童信息保护有任何疑问，可联系我们协助删除相关本地数据。</li>
+  </ul>
+
+  <h2>七、政策的更新</h2>
+  <p>因软件功能或权限变化，本政策可能更新。更新后将在本页面及应用内公布并注明更新日期；
+  <b>收集、使用个人信息的目的、方式、范围发生重大变更时，将再次以弹窗等方式征得你的明示同意</b>。</p>
+
+  <h2>八、联系我们</h2>
+  <p>开发者（个人信息保护负责人）：个人开发者 <span class="fill">〔开发者真实姓名〕</span><br>
+  联系邮箱：<span class="mail">16386618@qq.com</span><br>
+  如对隐私政策或数据合规有疑问，欢迎来信；邮件标题注明「隐私」可获得优先处理。</p>
+
+  <footer>© 2026 手扶拖拉机声浪模拟器 · 本政策自 2026 年 10 月 31 日起生效</footer>
+</div>
+</body>
+</html>

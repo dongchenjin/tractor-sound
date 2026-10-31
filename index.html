@@ -1,0 +1,2275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>手扶拖拉机声浪模拟器</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #070a14;
+    color: #cfeaff;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  /* 霓虹夜色背景 */
+  .bg {
+    position: fixed; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 70% 45% at 18% 88%, rgba(0,220,255,.16), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 85% 12%, rgba(255,60,190,.14), transparent 60%),
+      radial-gradient(ellipse 90% 60% at 50% 50%, rgba(30,40,90,.35), transparent 75%),
+      radial-gradient(ellipse 140% 100% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%),
+      linear-gradient(180deg, #0b0f1e 0%, #070a14 55%, #05070e 100%);
+  }
+  /* 星空：两撮大小不一的星点 */
+  .bg::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1.4px 1.4px at 12% 18%, rgba(255,255,255,.75), transparent 60%),
+      radial-gradient(1.1px 1.1px at 28% 8%,  rgba(180,240,255,.6), transparent 60%),
+      radial-gradient(1.6px 1.6px at 47% 22%, rgba(255,255,255,.55), transparent 60%),
+      radial-gradient(1.1px 1.1px at 64% 12%, rgba(255,220,240,.6), transparent 60%),
+      radial-gradient(1.5px 1.5px at 81% 26%, rgba(255,255,255,.7), transparent 60%),
+      radial-gradient(1.1px 1.1px at 91% 7%,  rgba(180,240,255,.5), transparent 60%),
+      radial-gradient(1.3px 1.3px at 7% 42%,  rgba(255,255,255,.45), transparent 60%),
+      radial-gradient(1.2px 1.2px at 72% 38%, rgba(255,255,255,.4), transparent 60%),
+      radial-gradient(1.5px 1.5px at 38% 44%, rgba(200,250,255,.5), transparent 60%),
+      radial-gradient(1.1px 1.1px at 55% 33%, rgba(255,255,255,.5), transparent 60%);
+    animation: starTwinkle 4.5s ease-in-out infinite alternate;
+  }
+  @keyframes starTwinkle {
+    from { opacity: .55; } to { opacity: 1; }
+  }
+  .bg::after {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,255,.035) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 55%, #000 0%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 55%, #000 0%, transparent 75%);
+  }
+  /* 老式 CRT 扫描线，几乎看不见但添质感 */
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 25;
+    background: repeating-linear-gradient(180deg,
+      rgba(255,255,255,.028) 0 1px, transparent 1px 3px);
+  }
+
+  .page {
+    position: relative; width: 100%; max-width: 460px;
+    display: flex; flex-direction: column;
+    padding: max(14px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+    height: 100%;
+  }
+
+  /* ============ 标题 ============ */
+  .title {
+    text-align: center; margin-top: 2px;
+  }
+  .title h1 {
+    font-size: 21px; font-weight: 800; letter-spacing: 5px;
+    color: #e8fbff;
+    text-shadow:
+      0 0 6px rgba(0,229,255,.9), 0 0 18px rgba(0,229,255,.55),
+      0 0 42px rgba(255,60,190,.35);
+    white-space: nowrap;
+  }
+  .title p {
+    margin-top: 5px; font-size: 10px; letter-spacing: 4px;
+    color: rgba(140,220,255,.55);
+  }
+
+  /* ============ 顶部非圆形仪表（数码 + LED 分段条） ============ */
+  .dash {
+    margin: 12px auto 0; width: 100%; max-width: 400px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .gauge {
+    position: relative; padding: 8px 11px 9px; border-radius: 10px;
+    background: linear-gradient(180deg, rgba(8,20,32,.92), rgba(4,10,18,.95));
+    border: 1px solid rgba(0,220,255,.18);
+    box-shadow: inset 0 0 20px rgba(0,220,255,.05), 0 6px 18px rgba(0,0,0,.45);
+    overflow: hidden;
+  }
+  .gauge::before {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px);
+    pointer-events: none;
+  }
+  .g-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 10px; letter-spacing: 2px; color: #5f93ae;
+  }
+  .g-head .unit { font-family: Consolas, monospace; letter-spacing: 0; font-size: 9px; opacity: .8; }
+  .g-value {
+    display: flex; align-items: baseline; gap: 4px;
+    font-family: Consolas, "DIN Alternate", monospace;
+    line-height: 1.05; margin: 1px 0 5px;
+  }
+  .g-value .num {
+    font-size: 28px; font-weight: 900; color: #9dfff0;
+    text-shadow: 0 0 4px rgba(140,255,240,.95), 0 0 12px rgba(0,255,214,.8),
+                 0 0 26px rgba(0,229,255,.55), 0 0 46px rgba(0,200,255,.35);
+    -webkit-text-stroke: .7px rgba(200,255,246,.5);
+    font-variant-numeric: tabular-nums;
+  }
+  .gauge.rpm .num {
+    color: #f8ffb4;
+    text-shadow: 0 0 4px rgba(252,255,160,.95), 0 0 14px rgba(255,232,70,.75),
+                 0 0 30px rgba(255,180,0,.42), 0 0 50px rgba(255,140,0,.25);
+    -webkit-text-stroke: .7px rgba(255,250,195,.5);
+  }
+  .gauge.rpm.redline .num {
+    color: #ffb9c6;
+    text-shadow: 0 0 4px rgba(255,170,190,.95), 0 0 14px rgba(255,80,110,.85),
+                 0 0 30px rgba(255,40,80,.5);
+    -webkit-text-stroke: .7px rgba(255,210,220,.5);
+  }
+  /* 运转中：数字呼吸发光 */
+  @keyframes numPulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.28); }
+  }
+  body.running .g-value .num { animation: numPulse 1.15s ease-in-out infinite; }
+
+  .segs { display: flex; gap: 2.5px; height: 13px; }
+  .seg {
+    flex: 1; border-radius: 1.5px;
+    transform: skewX(-20deg);
+    background: #0d1a28;
+    border: 1px solid rgba(0,220,255,.10);
+    transition: background .06s linear, box-shadow .06s linear;
+  }
+  .seg.on {
+    background: linear-gradient(180deg, #b6f8ff, #00c3e6);
+    border-color: rgba(0,229,255,.75);
+    box-shadow: 0 0 7px rgba(0,229,255,.9);
+  }
+  .gauge.rpm .seg.on {
+    background: linear-gradient(180deg, #ffefb8, #ffb733);
+    border-color: rgba(255,190,60,.8);
+    box-shadow: 0 0 7px rgba(255,185,50,.9);
+  }
+  .gauge.rpm .seg.warn.on {
+    background: linear-gradient(180deg, #ffc46a, #ff7a1e);
+    border-color: rgba(255,130,30,.9);
+    box-shadow: 0 0 8px rgba(255,120,30,.95);
+  }
+  .gauge.rpm .seg.hot.on {
+    background: linear-gradient(180deg, #ff9aab, #ff2f52);
+    border-color: rgba(255,60,90,.95);
+    box-shadow: 0 0 9px rgba(255,50,80,1);
+  }
+  .gauge.speed .seg.warn.on {
+    background: linear-gradient(180deg, #b6f8ff, #38d6ff);
+    border-color: rgba(90,230,255,.9);
+    box-shadow: 0 0 8px rgba(60,220,255,.95);
+  }
+  .gauge.speed .seg.hot.on {
+    background: linear-gradient(180deg, #ff9aab, #ff2f52);
+    border-color: rgba(255,60,90,.95);
+    box-shadow: 0 0 9px rgba(255,50,80,1);
+  }
+  .g-scale {
+    display: flex; justify-content: space-between;
+    margin-top: 3px; font-family: Consolas, monospace;
+    font-size: 8.5px; color: #3f6b82; letter-spacing: .5px;
+  }
+
+  /* ============ HUD 状态屏 ============ */
+  .hud {
+    margin: 12px auto 0; width: 100%; max-width: 360px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; border-radius: 10px;
+    background: linear-gradient(180deg, rgba(6,18,26,.9), rgba(4,12,20,.9));
+    border: 1px solid rgba(0,220,255,.22);
+    box-shadow: 0 0 14px rgba(0,220,255,.10), inset 0 0 18px rgba(0,220,255,.05);
+    font-family: Consolas, "DIN Alternate", monospace;
+    font-size: 13px; letter-spacing: 1px;
+  }
+  .hud .led {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #2a3340; margin-right: 6px; vertical-align: baseline;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.8);
+  }
+  .hud .led.amber { background: #ffc24d; box-shadow: 0 0 8px rgba(255,194,77,.9); animation: blink 1s infinite; }
+  .hud .led.green { background: #3dffb0; box-shadow: 0 0 8px rgba(61,255,176,.9); }
+  .hud .led.red   { background: #ff5a6e; box-shadow: 0 0 8px rgba(255,90,110,.9); }
+  @keyframes blink { 50% { opacity: .25; } }
+  .hud .rpm { color: #ffd24d; text-shadow: 0 0 8px rgba(255,210,77,.5); }
+  .hud .stat {
+    flex: 1; text-align: center; font-size: 12px;
+    color: #7fe9ff; text-shadow: 0 0 8px rgba(0,220,255,.45);
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  .hud .stat.fail { color: #ff6b7d; text-shadow: 0 0 8px rgba(255,90,120,.6); animation: blink .5s 3; }
+  .hud .gps { color: #9fdcff; }
+
+  /* ============ 拖拉机舞台 ============ */
+  .stage-wrap {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    position: relative; min-height: 0;
+  }
+  .stage {
+    position: relative; width: 88%; max-width: 400px;
+    cursor: pointer; touch-action: none;
+    -webkit-box-reflect: below 2px linear-gradient(transparent 62%, rgba(0,255,255,.10) 88%, rgba(0,255,255,.22) 100%);
+    will-change: transform;
+  }
+  .stage img { width: 100%; display: block; pointer-events: none; }
+  /* 烟雾层：fixed 全屏，烟从排气口一路飘满整屏 */
+  #smoke {
+    position: fixed; inset: 0; width: 100vw; height: 100vh;
+    pointer-events: none; z-index: 30;
+  }
+  /* 转速霓虹底光 */
+  .stage .underglow {
+    position: absolute; left: 8%; right: 8%; bottom: -4%; height: 30%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 50%, rgba(0,229,255,.55), rgba(255,60,190,.25) 55%, transparent 75%);
+    filter: blur(14px);
+    opacity: 0; transition: opacity .25s;
+    pointer-events: none;
+  }
+  /* 心跳动画（摇车中） */
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    12% { transform: scale(1.05); }
+    24% { transform: scale(1); }
+    36% { transform: scale(1.065); }
+    52% { transform: scale(1); }
+  }
+  .stage.cranking img { animation: heartbeat .85s ease-in-out infinite; filter: brightness(1.1); }
+  .stage.cranking .underglow { opacity: .35; animation: blink .85s infinite; }
+
+  .hint {
+    position: absolute; bottom: 2px; left: 0; right: 0;
+    text-align: center; font-size: 11px; letter-spacing: 2px;
+    color: rgba(140,220,255,.5); pointer-events: none;
+  }
+
+  /* ============ 控制区 ============ */
+  .controls {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 16px;
+    background: linear-gradient(180deg, rgba(12,20,38,.85), rgba(8,12,26,.85));
+    border: 1px solid rgba(0,220,255,.18);
+    box-shadow: 0 10px 30px rgba(0,0,0,.5), inset 0 0 22px rgba(0,220,255,.04);
+  }
+
+  /* GPS 舭空开关 */
+  .gps-switch {
+    flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer;
+  }
+  .gps-switch .tk {
+    width: 54px; height: 28px; border-radius: 14px; position: relative;
+    background: #101828;
+    border: 1px solid rgba(0,220,255,.25);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.7);
+    transition: background .2s, box-shadow .2s;
+  }
+  .gps-switch .tk::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #dff6ff, #5f8fb0 60%, #2c4258);
+    box-shadow: 0 2px 5px rgba(0,0,0,.6);
+    transition: transform .2s, background .2s;
+  }
+  .gps-switch.on .tk {
+    background: rgba(0,229,255,.18);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.5), 0 0 12px rgba(0,229,255,.4);
+  }
+  .gps-switch.on .tk::after {
+    transform: translateX(26px);
+    background: radial-gradient(circle at 35% 30%, #ffffff, #35e0ff 60%, #0088aa);
+    box-shadow: 0 2px 5px rgba(0,0,0,.5), 0 0 10px rgba(0,229,255,.9);
+  }
+  .gps-switch .lab { font-size: 11px; letter-spacing: 2px; color: #6f9db8; }
+  .gps-switch.on .lab { color: #4de4ff; text-shadow: 0 0 8px rgba(0,229,255,.6); }
+
+  /* 油门滑条 */
+  .throttle-col { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+  .throttle-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 11px; letter-spacing: 2px; color: #6f9db8;
+  }
+  .throttle-head .val {
+    font-family: Consolas, monospace; font-size: 14px; font-weight: bold;
+    color: #4de4ff; text-shadow: 0 0 8px rgba(0,229,255,.6);
+  }
+  input[type=range].throttle {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 34px; background: transparent; outline: none;
+    cursor: pointer; touch-action: none;
+  }
+  input[type=range].throttle::-webkit-slider-runnable-track {
+    height: 12px; border-radius: 6px;
+    background:
+      linear-gradient(90deg, #00e5ff 0%, #00b8d9 var(--fill, 0%), #132030 var(--fill, 0%));
+    box-shadow:
+      inset 0 1px 3px rgba(0,0,0,.7),
+      0 0 10px rgba(0,229,255, calc(.35 * var(--glow, 0)));
+    border: 1px solid rgba(0,220,255,.25);
+  }
+  input[type=range].throttle::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 30px; height: 30px; margin-top: -10px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #eafcff, #37cdea 55%, #0a7a94);
+    border: 2px solid rgba(0,229,255,.6);
+    box-shadow: 0 0 12px rgba(0,229,255,.7), 0 3px 6px rgba(0,0,0,.6);
+  }
+  input[type=range].throttle:disabled { opacity: .35; cursor: default; }
+  .throttle-col.disabled .val { color: #3d5868; text-shadow: none; }
+
+  .foot {
+    margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 9.5px; letter-spacing: 1px; color: rgba(110,150,180,.45);
+    white-space: nowrap;
+  }
+
+  /* ---- 打赏按钮 ---- */
+  .tip-btn {
+    padding: 5px 12px; border-radius: 999px; font-size: 10.5px; letter-spacing: .5px;
+    color: #ffd76a; cursor: pointer;
+    background: rgba(255,190,60,.08); border: 1px solid rgba(255,200,80,.4);
+    box-shadow: 0 0 8px rgba(255,190,60,.15), inset 0 0 6px rgba(255,190,60,.08);
+  }
+  .tip-btn:active { background: rgba(255,190,60,.22); }
+
+  /* ---- 打赏弹窗 ---- */
+  #tipMask {
+    position: fixed; inset: 0; z-index: 40; display: none;
+    background: rgba(4,8,14,.78); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center; padding: 18px;
+  }
+  #tipMask.show { display: flex; }
+  .tip-card {
+    width: min(92vw, 360px); max-height: 94vh; overflow-y: auto;
+    background: linear-gradient(160deg, #0d1b2a, #0a1320 60%, #0d1a28);
+    border: 1px solid rgba(0,229,255,.35); border-radius: 18px;
+    box-shadow: 0 0 30px rgba(0,229,255,.22), 0 18px 50px rgba(0,0,0,.7);
+    padding: 16px 16px 14px; position: relative; text-align: center;
+  }
+  .tip-free {
+    display: none; margin: 0 0 10px; padding: 7px 34px 7px 10px; border-radius: 10px;
+    text-align: left;
+    background: rgba(255,200,60,.1); border: 1px dashed rgba(255,210,90,.5);
+    color: #ffd76a; font-size: 11px; line-height: 1.55;
+  }
+  .tip-free.show { display: block; }
+  .tip-card h2 {
+    margin: 0 0 4px; font-size: 17px; color: #ffd76a;
+    text-shadow: 0 0 10px rgba(255,190,60,.5);
+  }
+  .tip-sub { font-size: 11px; color: #7fa8c4; margin-bottom: 10px; }
+  .tip-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+  .tip-tabs button {
+    flex: 1; padding: 7px 0; border-radius: 10px; font-size: 12px; cursor: pointer;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(120,180,220,.3);
+    color: #9cc3dd;
+  }
+  .tip-tabs button.on { color: #05121c; font-weight: bold; }
+  .tip-tabs button.on.wx { background: #2aae67; border-color: #2aae67; }
+  .tip-tabs button.on.zfb { background: #1677ff; border-color: #1677ff; }
+  .tip-qr {
+    margin: 0 auto 10px; width: 205px; border-radius: 12px; overflow: hidden;
+    background: #fff; box-shadow: 0 0 18px rgba(0,0,0,.5);
+  }
+  .tip-qr img { display: block; width: 100%; }
+  .tip-amts { display: flex; gap: 6px; margin: 2px 0 8px; }
+  .tip-amts button {
+    flex: 1; padding: 6px 2px; border-radius: 9px; font-size: 10.5px; line-height: 1.35;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(120,180,220,.3);
+    color: #9cc3dd; cursor: pointer;
+  }
+  .tip-amts button.on {
+    color: #ffd76a; border-color: rgba(255,200,80,.7);
+    background: rgba(255,190,60,.12); box-shadow: 0 0 8px rgba(255,190,60,.25);
+  }
+  .tip-amts b { display: block; font-size: 12px; }
+  .tip-quip { min-height: 32px; font-size: 11.5px; line-height: 1.5; color: #ffd76a; margin-bottom: 10px; }
+  .tip-btns { display: flex; gap: 8px; }
+  .tip-btns button {
+    flex: 1; padding: 10px 0; border-radius: 11px; font-size: 13px; cursor: pointer;
+    border: 1px solid rgba(0,229,255,.5);
+  }
+  #tipSaveBtn { background: rgba(0,229,255,.12); color: #4de4ff; }
+  #tipPaidBtn {
+    background: linear-gradient(180deg, #ffd76a, #e89b1c); border: none;
+    color: #231400; font-weight: bold; box-shadow: 0 0 14px rgba(255,190,60,.4);
+  }
+  .tip-close {
+    position: absolute; right: 8px; top: 6px; width: 32px; height: 32px;
+    font-size: 15px; color: #7fa8c4; background: none; border: none; cursor: pointer;
+  }
+  .tip-note { margin-top: 9px; font-size: 10px; color: rgba(110,150,180,.5); line-height: 1.6; }
+  .tip-toast {
+    position: fixed; left: 50%; bottom: 12%; transform: translateX(-50%);
+    z-index: 60; background: rgba(10,20,32,.95); border: 1px solid rgba(0,229,255,.5);
+    color: #bfe9ff; font-size: 12px; padding: 9px 16px; border-radius: 10px;
+    box-shadow: 0 0 16px rgba(0,229,255,.3); pointer-events: none;
+    opacity: 0; transition: opacity .25s; max-width: 86vw;
+    text-align: center; line-height: 1.55; white-space: pre-line;
+  }
+  .tip-toast.show { opacity: 1; }
+
+  /* ---- 关于 / 免责 ---- */
+  .about-btn {
+    padding: 5px 11px; border-radius: 999px; font-size: 10.5px; letter-spacing: .5px;
+    color: #7fe6ff; cursor: pointer;
+    background: rgba(0,229,255,.07); border: 1px solid rgba(0,200,255,.35);
+    box-shadow: 0 0 8px rgba(0,200,255,.12), inset 0 0 6px rgba(0,200,255,.06);
+  }
+  .about-btn:active { background: rgba(0,229,255,.2); }
+  #aboutMask {
+    position: fixed; inset: 0; z-index: 45; display: none;
+    background: rgba(4,8,14,.8); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center; padding: 18px;
+  }
+  #aboutMask.show { display: flex; }
+  .about-card {
+    width: min(92vw, 372px); max-height: 88vh; overflow-y: auto;
+    background: linear-gradient(160deg, #0d1b2a, #0a1320 60%, #0d1a28);
+    border: 1px solid rgba(0,229,255,.35); border-radius: 18px;
+    box-shadow: 0 0 30px rgba(0,229,255,.22), 0 18px 50px rgba(0,0,0,.7);
+    padding: 16px 16px 14px; position: relative; text-align: left; color: #a9c9dd;
+  }
+  .about-card h2 {
+    margin: 0 0 3px; font-size: 16px; color: #4de4ff; text-align: center;
+    text-shadow: 0 0 10px rgba(0,229,255,.6);
+  }
+  .about-sub {
+    font-size: 10.5px; color: #6e93ad; text-align: center;
+    margin-bottom: 13px; letter-spacing: .4px; line-height: 1.6;
+  }
+  .about-sec { margin: 0 0 11px; }
+  .about-sec h3 {
+    font-size: 11.5px; color: #7fe6ff; letter-spacing: 1px; margin: 0 0 5px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .about-sec h3::before {
+    content: ""; width: 3px; height: 11px; border-radius: 2px;
+    background: linear-gradient(#00e5ff, #0077a8);
+  }
+  .about-sec p { margin: 0 0 6px; font-size: 11.5px; line-height: 1.72; color: #9dbcce; }
+  .about-list {
+    margin: 0; padding-left: 15px; font-size: 10.8px; line-height: 1.75; color: #93b3c6;
+  }
+  .about-list li { margin-bottom: 4px; }
+  .about-list li b { color: #ffd76a; font-weight: normal; }
+  .about-mail {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-top: 4px; padding: 9px 11px; border-radius: 11px;
+    background: rgba(0,229,255,.07); border: 1px solid rgba(0,229,255,.28);
+  }
+  .about-mail a {
+    color: #9dfff0; font-size: 12.5px; font-family: Consolas, monospace;
+    text-decoration: none; letter-spacing: .3px;
+    text-shadow: 0 0 8px rgba(0,229,255,.55);
+  }
+  .about-mail button {
+    flex: 0 0 auto; padding: 5px 11px; border-radius: 8px; font-size: 11px;
+    cursor: pointer; color: #05121c; font-weight: bold; border: none;
+    background: linear-gradient(180deg, #7de8ff, #12a8cf);
+  }
+  .about-btns { display: flex; gap: 8px; margin-top: 13px; }
+  .about-btns button {
+    flex: 1; padding: 10px 0; border-radius: 11px; font-size: 13px; cursor: pointer;
+    border: 1px solid rgba(0,229,255,.5); background: rgba(0,229,255,.12); color: #4de4ff;
+  }
+  .about-copy {
+    margin-top: 10px; font-size: 9.5px; color: rgba(110,150,180,.5);
+    text-align: center; line-height: 1.6;
+  }
+
+  /* ---- 首启隐私授权弹窗 ---- */
+  #privMask {
+    position: fixed; inset: 0; z-index: 60; display: none;
+    background: rgba(3,7,12,.93); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  #privMask.show { display: flex; }
+  .priv-card {
+    width: min(93vw, 380px); max-height: 90vh; display: flex; flex-direction: column;
+    background: linear-gradient(160deg, #0d1b2a, #0a1320 60%, #0d1a28);
+    border: 1px solid rgba(0,229,255,.4); border-radius: 18px;
+    box-shadow: 0 0 34px rgba(0,229,255,.24), 0 18px 50px rgba(0,0,0,.75);
+    padding: 16px 15px 13px; text-align: left;
+  }
+  .priv-card h2 {
+    margin: 0 0 3px; font-size: 16px; color: #4de4ff; text-align: center;
+    text-shadow: 0 0 10px rgba(0,229,255,.6);
+  }
+  .priv-hint {
+    font-size: 10.5px; color: #6e93ad; text-align: center;
+    margin-bottom: 9px; letter-spacing: .3px;
+  }
+  .priv-scroll {
+    flex: 1 1 auto; overflow-y: auto; min-height: 0;
+    padding: 10px 11px; border-radius: 12px;
+    background: rgba(0,20,32,.55); border: 1px solid rgba(0,229,255,.16);
+    -webkit-overflow-scrolling: touch;
+  }
+  .priv-scroll h3 {
+    font-size: 11.5px; color: #7fe6ff; margin: 9px 0 4px; letter-spacing: .5px;
+  }
+  .priv-scroll h3:first-child { margin-top: 0; }
+  .priv-scroll p, .priv-scroll li {
+    margin: 0 0 5px; font-size: 10.6px; line-height: 1.72; color: #9dbcce;
+  }
+  .priv-scroll ul { margin: 0 0 4px; padding-left: 15px; }
+  .priv-scroll b { color: #ffd76a; font-weight: normal; }
+  .priv-btns { display: flex; gap: 8px; margin-top: 12px; }
+  .priv-btns button {
+    padding: 11px 0; border-radius: 11px; font-size: 12.5px; cursor: pointer;
+    border: 1px solid rgba(0,229,255,.4); background: rgba(0,229,255,.08); color: #8fd8ee;
+  }
+  #privAgree {
+    flex: 1.25; border: none; font-weight: bold; color: #05121c;
+    background: linear-gradient(180deg, #7de8ff, #12a8cf);
+    box-shadow: 0 0 14px rgba(0,200,255,.35);
+  }
+  #privManual { flex: 1; }
+  body.no-gps .gps-switch { opacity: .4; }
+  body.no-gps .gps-switch .lab::after { content: '（已关）'; }
+
+  /* ---- 金主彩蛋：镀金拖拉机 ---- */
+  body.gold #tractorImg {
+    filter: sepia(1) saturate(3.4) hue-rotate(-18deg) brightness(1.12)
+      drop-shadow(0 0 16px rgba(255,200,60,.75));
+  }
+  body.gold .title h1::after { content: ' 👑'; }
+  body.gold .tip-btn { color: #fff3c4; border-color: rgba(255,220,120,.8);
+    box-shadow: 0 0 12px rgba(255,200,60,.45); }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="page">
+  <div class="title">
+    <h1>手扶拖拉机声浪模拟器</h1>
+    <p>WALKING TRACTOR · S195 DIESEL · SOUND SIM</p>
+  </div>
+
+  <div class="dash">
+    <div class="gauge speed">
+      <div class="g-head"><span>时速</span><span class="unit">km/h</span></div>
+      <div class="g-value"><span class="num" id="spdVal">0.0</span></div>
+      <div class="segs" id="spdSegs"></div>
+      <div class="g-scale"><span>0</span><span>100</span><span>200</span></div>
+    </div>
+    <div class="gauge rpm" id="rpmGauge">
+      <div class="g-head"><span>转速</span><span class="unit">×100 r/min</span></div>
+      <div class="g-value"><span class="num" id="rpmBig">0</span></div>
+      <div class="segs" id="rpmSegs"></div>
+      <div class="g-scale"><span>0</span><span>12</span><span>24</span></div>
+    </div>
+  </div>
+
+  <div class="hud">
+    <span class="gps"><i class="led" id="gpsLed"></i><span id="gpsVal">GPS --.-</span></span>
+    <span class="stat" id="statText">熄火 · 按住拖拉机摇车启动</span>
+    <span class="rpm" id="thrHud">油门 0%</span>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="stage" id="stage">
+      <div class="underglow" id="underglow"></div>
+      <img id="tractorImg" src="assets/tractor.png" alt="手扶拖拉机" draggable="false"
+           onerror="if(this.getAttribute('src')!=='tractor.png'){this.src='tractor.png';}">
+    </div>
+    <div class="hint">按住拖拉机摇车启动 · 运转时点一下熄火</div>
+  </div>
+
+  <div class="controls">
+    <div class="gps-switch" id="gpsSwitch">
+      <div class="tk"></div>
+      <div class="lab">GPS跟速</div>
+    </div>
+    <div class="throttle-col" id="throttleCol">
+      <div class="throttle-head"><span>油门 THROTTLE</span><span class="val" id="thrVal">0%</span></div>
+      <input type="range" class="throttle" id="throttle" min="0" max="100" value="0">
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>0~200 km/h · 请先调低音量 · <b id="verTag">v2.6</b></span>
+    <button class="about-btn" id="aboutBtn">关于</button>
+    <button class="tip-btn" id="tipBtn">☕ 赏口油钱</button>
+  </div>
+</div>
+
+<!-- 关于项目 / 免责声明 -->
+<div id="aboutMask">
+  <div class="about-card">
+    <button class="tip-close" id="aboutClose">✕</button>
+    <h2>关于这辆拖拉机</h2>
+    <div class="about-sub">
+      手扶拖拉机声浪模拟器 · <span id="aboutVer">v2.4</span><br>
+      S195 单缸柴油机 · 纯前端离线声浪合成
+    </div>
+
+    <div class="about-sec">
+      <h3>项目简介</h3>
+      <p>一个自娱自乐的小玩意儿：把 S195 单缸柴油机的“突突突”塞进手机，用 GPS 速度或油门滑条驱动转速，
+      配上摇把启动、排气浓烟和机械咔哒。没有联网、没有账号、没有广告，也不消耗你的流量。</p>
+    </div>
+
+    <div class="about-sec">
+      <h3>免责声明</h3>
+      <ul class="about-list">
+        <li>本软件是<b>声音模拟娱乐程序</b>，非真实车辆产品，与任何车辆厂商、品牌、型号无关联，也不具备任何驾驶辅助功能。</li>
+        <li>请在<b>停车、居家等安全环境</b>下使用。严禁于驾驶、骑行、步行上路或操作机械时使用，因此分心导致的任何后果由使用者自行承担。</li>
+        <li>请<b>先调低音量</b>再启动。长时间大音量（尤其戴耳机）可能造成听力损伤，请自行控制音量与时长。</li>
+        <li>GPS 仅用于在<b>本机</b>换算车速，位置数据不上传、不存储、不共享；本软件不收集任何个人信息，无网络请求。</li>
+        <li>打赏完全自愿，属对开发者的无偿鼓励，<b>不构成任何购买、订阅或服务承诺</b>；不打赏亦不影响全部功能。</li>
+        <li>音效素材来自公开素材库与自行录制处理，仅用于学习交流与娱乐；如涉版权问题请联系下方邮箱，将立即处理。</li>
+        <li>本软件按“现状”提供，不附带任何明示或默示担保。因使用或无法使用本软件产生的直接或间接损失，开发者不承担责任。</li>
+      </ul>
+    </div>
+
+    <div class="about-sec">
+      <h3>开发者联系方式</h3>
+      <div class="about-mail">
+        <a href="mailto:16386618@qq.com">16386618@qq.com</a>
+        <button id="aboutCopy">复制邮箱</button>
+      </div>
+      <p style="margin-top:7px;font-size:10.5px;color:#7b9cb0;">
+        反馈 bug、提建议、想加什么声音，都欢迎来信；邮件标题带上「拖拉机」我会更快看到。
+      </p>
+    </div>
+
+    <div class="about-sec">
+      <h3>隐私与授权</h3>
+      <p>本软件不收集个人信息；仅在你打开 GPS 跟速时于本机读取速度，不上传不存储。当前状态：<b id="privState">未选择</b></p>
+      <button id="privReopen" style="margin-top:6px;width:100%;padding:8px 0;border-radius:9px;font-size:11.5px;cursor:pointer;color:#8fd8ee;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.32);">查看《隐私政策》 / 重新授权</button>
+    </div>
+
+    <div class="about-btns">
+      <button id="aboutDone">知道啦 · 突突去</button>
+    </div>
+    <div class="about-copy">© 2026 手扶拖拉机声浪模拟器 · 保留所有权利</div>
+  </div>
+</div>
+
+<!-- 打赏弹窗（完全自愿，不打赏功能照常） -->
+<div id="tipMask">
+  <div class="tip-card">
+    <button class="tip-close" id="tipClose">✕</button>
+    <div class="tip-free" id="tipFree">
+      先说清楚：这拖拉机<b>免费骑到天荒地老</b>，一分不掏也照样突突！<br>
+      只是它今天油耗有点高，缸垫还在漏风……你懂的 🛢️<br>
+      （本次弹出纯属巧合，以后再也不会自动打扰，纯手动营业）
+    </div>
+    <h2>给拖拉机加点柴油</h2>
+    <div class="tip-sub">免费玩的 · 突突得带劲就赏口油钱 · 不赏也照突</div>
+    <div class="tip-tabs">
+      <button id="tabWx" class="on wx">微信支付</button>
+      <button id="tabZfb" class="zfb">支付宝</button>
+    </div>
+    <div class="tip-qr"><img id="tipQrImg" src="assets/tip_wechat.jpg" alt="收款码"></div>
+    <div class="tip-amts" id="tipAmts"></div>
+    <div class="tip-quip" id="tipQuip"></div>
+    <div class="tip-btns">
+      <button id="tipSaveBtn">保存收款码</button>
+      <button id="tipPaidBtn">我已打赏 🎖️</button>
+    </div>
+    <div class="tip-note">
+      保存后：打开微信/支付宝 → 扫一扫 → 右上角「相册」选这张图<br>
+      不打赏完全不影响使用，一分钱也是对拖拉机瘦瘦身材的认可
+    </div>
+  </div>
+</div>
+<div class="tip-toast" id="tipToast"></div>
+<canvas id="smoke" aria-hidden="true"></canvas>
+
+<!-- 首次启动：隐私政策提示与授权（合规必需，不可点遮罩跳过） -->
+<div id="privMask">
+  <div class="priv-card">
+    <h2>隐私政策与授权提示</h2>
+    <div class="priv-hint">开始使用前，请阅读并同意《隐私政策》</div>
+    <div class="priv-scroll" id="privScroll">
+      <h3>声明主体</h3>
+      <p>本软件「手扶拖拉机声浪模拟器」（包名 <b>com.jinlaoda.tractor</b>）由<b>个人开发者</b>独立开发并运营，
+      是本政策的唯一责任主体。本政策独立成文，独立于任何其他协议或声明，与软件实际功能、权限调用一一对应。
+      联系方式：<b>16386618@qq.com</b>。</p>
+
+      <h3>一、我们不收集个人信息</h3>
+      <p>本软件<b>没有账号体系</b>，不需要注册或登录，不索取手机号、姓名、身份证、通讯录、短信、相册、相机、麦克风等任何信息；
+      也未接入任何统计、广告、推送类第三方 SDK，不做任何数据上传。</p>
+
+      <h3>二、定位权限（唯一敏感权限）</h3>
+      <p>仅当你主动打开「GPS 跟速」时，本软件调用系统定位获取实时速度，用于<b>在本机换算发动机转速与声浪</b>。
+      速度数据<b>不上传、不存储、不共享、不用于画像或广告</b>。拒绝授权或关闭该开关后，用油门滑条即可完整使用全部功能。</p>
+
+      <h3>三、权限与网络说明</h3>
+      <ul>
+        <li><b>精确定位 / 模糊定位</b>：同上，仅 GPS 跟速模式使用。</li>
+        <li><b>网络权限</b>：仅用于本机内部加载界面素材（127.0.0.1 本地回环），<b>不连接任何外部服务器</b>。</li>
+        <li>不申请存储、相机、麦克风、通讯录等权限。</li>
+      </ul>
+
+      <h3>四、本地数据与保存期限</h3>
+      <p>仅在本机保存功能性偏好（着车次数、提示是否已展示、彩蛋状态、本次授权选择），<b>不涉及个人信息</b>，
+      随清除应用数据或卸载即刻删除，开发者无法读取。</p>
+
+      <h3>五、账号与注销</h3>
+      <p>本软件<b>无注册登录、无账号体系</b>，因此不存在账号注销流程。如需删除全部本地数据或撤回授权：
+      在系统设置中清除本应用数据 / 卸载应用，或在「系统设置 → 应用 → 权限」中关闭定位。
+      亦可发邮件至 <b>16386618@qq.com</b> 提出删除请求，我们将在 15 个工作日内处理并回复。</p>
+
+      <h3>六、个性化推荐与广告</h3>
+      <p>本软件<b>不提供个性化推荐、不做用户画像、不投放任何广告、不进行定向推送</b>。</p>
+
+      <h3>七、未成年人保护</h3>
+      <p>本软件为声音模拟娱乐工具，<b>不面向儿童设计，不收集儿童个人信息</b>。若使用者为不满 14 周岁的儿童，
+      请在监护人陪同、同意并指导下使用，并注意控制音量与时长。监护人如发现儿童在未经同意的情况下使用，
+      可联系我们协助删除相关本地数据。</p>
+
+      <h3>八、你的权利</h3>
+      <p>你有权查阅、更正、删除个人信息，撤回授权，或注销（本软件无账号，对应为清除本地数据）。
+      对本政策有疑问、意见或投诉，可通过上述邮箱联系，我们将在 15 个工作日内回复。</p>
+
+      <h3>九、政策更新</h3>
+      <p>功能或权限发生变化时，本政策将同步更新并在应用内与本页面公布，注明更新日期；重大变更将再次征得你的同意。</p>
+    </div>
+    <div class="priv-btns">
+      <button id="privManual">仅手动模式</button>
+      <button id="privAgree">同意并继续</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ================= 参数 ================= */
+/* 资源基路径：走 http(127.0.0.1 内置服务) 时为 assets/；
+ * 万一降级到 file:///android_asset/，根目录本身就是 assets，必须去掉前缀 */
+const ASSET_BASE = (location.protocol === 'file:') ? '' : 'assets/';
+
+/* 拖拉机图双保险：按当前加载方式取图，失败再试同目录 */
+(function syncTractorImg() {
+  const img = document.getElementById('tractorImg');
+  if (!img) return;
+  img.onerror = function () {
+    if (img.getAttribute('src') !== 'tractor.png') img.src = 'tractor.png';
+  };
+  if (img.getAttribute('src') !== ASSET_BASE + 'tractor.png') {
+    img.src = ASSET_BASE + 'tractor.png';
+  }
+})();
+
+const IDLE_RPM = 600;
+const MAX_RPM = 2400;
+const FULL_SPEED_KMH = 200;     // 200 km/h 满表/满转速
+const HOT_KMH = 70;             // 70 km/h 就到 2150 r/min：日常速度段声音变化最猛
+const HOT_RPM = 2150;
+const FAIL_RATE = 0.10;         // 10% 启动失败
+const VOLUME = 0.8;
+
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+/* 两段式：0~70 km/h 走完 600→2150 的绝大部分（加速时声浪变化非常明显），
+ * 70 km/h 以上再慢慢爬到 2400，高速段继续加码但不封顶 */
+const kmhToRpm = kmh => {
+  const v = clamp(kmh, 0, FULL_SPEED_KMH);
+  if (v <= HOT_KMH) {
+    return Math.round(IDLE_RPM + Math.pow(v / HOT_KMH, 0.85) * (HOT_RPM - IDLE_RPM));
+  }
+  return Math.round(HOT_RPM + (v - HOT_KMH) / (FULL_SPEED_KMH - HOT_KMH) * (MAX_RPM - HOT_RPM));
+};
+const loadOf = rpm => clamp((rpm - IDLE_RPM) / (MAX_RPM - IDLE_RPM), 0, 1);
+
+/* ================= 全局状态 ================= */
+const state = {
+  gpsMode: false,
+  throttle: 0,
+  kmh: 0,
+  gpsState: 'off',   // off | requesting | connected | error
+  gpsWatchId: null,
+  lastLoc: null,
+  lastUiTs: 0,
+  pendingRpm: null
+};
+
+/* ================= 单缸柴油机声浪引擎 =================
+ * 音色目标：S195 手扶拖拉机（单缸四冲程柴油机）
+ *   特征 1：极低频闷“咚”，音高恒定，不随转速升降（摩托才会“呜——”地变调）
+ *   特征 2：柴油爆震敲击（压燃瞬间的 2~4 记硬敲），短促、粗糙、无金属铃响
+ *   特征 3：排气管“噗”的宽带气爆，宽而闷，不是哨音
+ *   特征 4：车体轰鸣靠噪声低频调制，不用锯齿波（那个一听就是电子音）
+ *
+ * 启动声 = 手摇启动：棘轮咔哒 + 压缩阻力“咚” + 漏气“嗤”，越摇越急
+ * 引擎声 = 每次燃烧一个完整声学事件，燃烧频率 = rpm / 120
+ * ==================================================== */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+const engine = {
+  ctx: null, master: null, bus: null, lp: null,
+  bufs: {},
+  samplesLoading: false, sampleDur: 0.2025, fireTrim: 0.62, lastGrain: -1,
+  state: 'off',
+  rpm: IDLE_RPM,
+  targetRpm: IDLE_RPM,     // 目标转速（GPS/油门给的），实际 rpm 会叠加着车轰油偏移
+  roarT: 0, roarAmp: 0,    // 着车一瞬间的轰油（1.15s 内从高位回落）
+  _runLast: 0,
+  timer: null,
+  nextFire: 0, nextChuff: 0,
+  crankStartTs: 0, catchDelay: 0, catchStart: 0,
+  willFail: false, failAt: 0,
+  rumbleSrc: null, rumbleLp: null, rumbleGain: null, rumbleMod: null,
+  lfo: null, lfoGain: null,
+  bed: null, bedFilter: null, bedGain: null,
+  onCatch: null, onRun: null, onFail: null, onDie: null,
+
+  /* ---------- 初始化 ---------- */
+  ensureCtx() {
+    if (this.ctx) { this.ctx.resume && this.ctx.resume(); return true; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    const ctx = new AC();
+    ctx.resume();
+
+    // 主链路：切掉放不出的超低频 → 中频“嗒嗒”抬起 → 粗糙软削波 → 保到 6.4k 的脆亮 → 总音量
+    const master = ctx.createGain();
+    master.gain.value = 0.0001;
+    const shaper = ctx.createWaveShaper();
+    const curve = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) {
+      const x = (i / 1023) * 2 - 1;
+      curve[i] = Math.tanh(x * 1.15) * 0.95;
+    }
+    shaper.curve = curve;
+    shaper.oversample = '2x';
+    // 55Hz 以下真机几乎没有能量（实测 20-80Hz 仅占 3%）
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 55; hp.Q.value = 0.7;
+    // 130Hz 微抬保留缸体厚度（真机 80-160Hz 占 10%）
+    const peakF = ctx.createBiquadFilter();
+    peakF.type = 'peaking'; peakF.frequency.value = 130; peakF.Q.value = 0.9; peakF.gain.value = 1.5;
+    // 素材本身重心已在 1.9k，这里只补 0.8dB 的清晰度，不能叠加过量高频
+    const peakH = ctx.createBiquadFilter();
+    peakH.type = 'peaking'; peakH.frequency.value = 1900; peakH.Q.value = 0.8; peakH.gain.value = 0.8;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 6400; lp.Q.value = 0.5;
+    const bus = ctx.createGain();
+    bus.gain.value = 1;
+
+    bus.connect(hp); hp.connect(peakF); peakF.connect(peakH); peakH.connect(shaper);
+    shaper.connect(lp); lp.connect(master); master.connect(ctx.destination);
+
+    // 一点户外空间感
+    const irLen = Math.floor(ctx.sampleRate * 0.26);
+    const ir = ctx.createBuffer(1, irLen, ctx.sampleRate);
+    const ird = ir.getChannelData(0);
+    for (let i = 0; i < irLen; i++) {
+      ird[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 5);
+    }
+    const conv = ctx.createConvolver();
+    conv.buffer = ir;
+    const wet = ctx.createGain();
+    wet.gain.value = 0.14;
+    bus.connect(conv); conv.connect(wet); wet.connect(hp);
+
+    this.ctx = ctx; this.master = master; this.bus = bus; this.lp = lp;
+    this.eqHp = hp; this.eqPeakF = peakF; this.eqPeakH = peakH; this.shaper = shaper;
+
+    this.bufs.fire = [
+      this.renderFire(ctx, 7), this.renderFire(ctx, 23),
+      this.renderFire(ctx, 41), this.renderFire(ctx, 67), this.renderFire(ctx, 97)
+    ];
+    this.bufs.bang = this.renderBang(ctx);
+    this.bufs.crank = this.renderCrankStroke(ctx);
+    this.bufs.bed = this.renderNoiseBed(ctx);
+    this.loadSamples(ctx);        // 真实录音循环优先，失败则用上面的合成音
+    return true;
+  },
+
+  /* ---------- 载入真实采样：从 Andoria S301D 录音切出的单缸柴油机循环 ----------
+   * 每个文件 = 一个完整工作循环（≈202.5ms，对应 593 r/min 的真实节奏）
+   * 播放时按 rpm 决定点火间隔，循环本体原样播放 → 音色 100% 是真机 */
+  loadSamples(ctx) {
+    if (this.samplesLoading || this.bufs.sampleFire) return;
+    this.samplesLoading = true;
+    const files = [1, 2, 3, 4, 5, 6].map(n => ASSET_BASE + 'fire' + n + '.ogg');
+    const fetchBuf = f => fetch(f, { cache: 'force-cache' })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then(ab => new Promise((ok, bad) => ctx.decodeAudioData(ab, ok, bad)));
+    // 启动声单独一路：真实拖拉机的打火/摇车录音，失败不影响点火循环
+    fetchBuf(ASSET_BASE + 'crank.ogg').then(b => { this.bufs.crankReal = b; })
+      .catch(() => {});
+    Promise.all(files.map(fetchBuf))
+      .then(list => {
+        this.bufs.sampleFire = list;
+        this.sampleDur = list[0].duration;
+        this.bufs.fire = list;
+        this.samplesLoading = false;
+        // 真实素材本身就是对的音色，把为合成音补偿的 EQ 全部归零，只留极轻的削波保护
+        try {
+          this.eqHp.frequency.value = 38;
+          this.eqPeakF.gain.value = 0;
+          this.eqPeakH.gain.value = 0;
+          this.lp.frequency.value = 9000;
+        } catch (e) { /* ignore */ }
+        console.log('[tractor] 真实采样就绪 ' + list.length + ' 段，循环 ' +
+          (this.sampleDur * 1000).toFixed(1) + 'ms');
+      })
+      .catch(err => {
+        this.samplesLoading = false;
+        console.warn('[tractor] 采样加载失败，回退合成音：', err);
+      });
+  },
+
+  /* 简易带通滤波器工厂（RBJ bandpass，用来做排气管/机械噪声的染色） */
+  mkBandpass(sr, f, q) {
+    const w0 = 2 * Math.PI * f / sr;
+    const alpha = Math.sin(w0) / (2 * q);
+    const b0 = alpha, b2 = -alpha;
+    const a0 = 1 + alpha, a1 = -2 * Math.cos(w0), a2 = 1 - alpha;
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    return function (x) {
+      const y = (b0 * x + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      return y;
+    };
+  },
+
+  /* ---------- 燃烧事件：单缸柴油机的一次做功 ---------- */
+  renderFire(ctx, seed) {
+    const sr = ctx.sampleRate;
+    const len = Math.floor(sr * 0.66);
+    const buf = ctx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    const R = mulberry32(seed);
+
+    // 参数按 Andoria S301D 单缸柴油机真实录音标定：
+    // 真机能量重心 1730Hz，20-160Hz 只占 14%，主力是 700-3000Hz 的金属敲击与排气
+    const f0 = 96 + R() * 16;           // 缸压冲击起始（落在 80-160Hz，是“嗒”不是“咚”）
+    const fEnd = 68 + R() * 10;         // 结束频率
+    const tauP = 0.045 + R() * 0.02;    // 压力波衰减（极短，利落的爆点）
+    const pipeF = 620 + R() * 170;      // 排气管共鸣（真机 480-1000Hz 最厚）
+    const knockAmt = 1.3 + R() * 0.5;   // 柴油爆震敲击量
+    const leak = 1.0 + R() * 0.35;      // 机械咔啦量
+
+    // 四段噪声染色：排气管共鸣 / 排气主体 / 金属敲击 / 高频脆响
+    const bpPipe = this.mkBandpass(sr, pipeF, 1.2 + R() * 0.4);
+    const bpMid = this.mkBandpass(sr, 1150 + R() * 260, 0.8);
+    const bpHi = this.mkBandpass(sr, 2150 + R() * 350, 1.05);
+    const bpVHi = this.mkBandpass(sr, 3700 + R() * 600, 0.85);
+    // 排气长尾：真机两次点火之间排气仍在流动，这条尾巴把“突突”之间的空隙填上
+    // 用宽带（只做一阶低通），能量均匀铺开，不会把某个频段挤满
+    const tailLpCoef = 1 - Math.exp(-2 * Math.PI * (1350 + R() * 400) / sr);
+    let tailLp = 0;
+
+    // 输出端单极点低通 9k：真机 3k 以上还有 13% 能量，不能掐
+    const lpCoef = 1 - Math.exp(-2 * Math.PI * 4600 / sr);
+    let lpOut = 0;
+
+    // 爆震敲击簇：压燃瞬间 3 记硬敲（间隔几毫秒）
+    const hits = [0, 0.0035 + R() * 0.0025, 0.0085 + R() * 0.004];
+
+    let phase = 0, peak = 1e-6;
+    for (let i = 0; i < len; i++) {
+      const t = i / sr;
+      // ===== 缸压冲击（短促“嗒”，只在 80-160Hz 留一点身体感）=====
+      const f = fEnd + (f0 - fEnd) * Math.exp(-t / 0.04);
+      phase += 2 * Math.PI * f / sr;
+      const atk = 1 - Math.exp(-t / 0.0005);
+      const pressure = Math.sin(phase) * Math.exp(-t / tauP) * atk;
+      // 次谐波压到几乎听不见：真机 20-80Hz 只有 3% 能量
+      const sub = Math.sin(phase * 0.5) * Math.exp(-t / (tauP * 1.1)) * 0.06;
+      const h2 = Math.sin(phase * 2 + 0.4) * Math.exp(-t / (tauP * 0.7)) * 0.34;
+
+      // ===== 柴油爆震：几记极短硬敲（宽带，2.2ms 衰减）=====
+      let knock = 0;
+      for (let k = 0; k < hits.length; k++) {
+        const dt = t - hits[k];
+        if (dt >= 0) knock += (Math.random() * 2 - 1) * Math.exp(-dt / 0.0022);
+      }
+
+      // ===== 排气气爆：短促的“啪”（真机 320-1500Hz 占比很大）=====
+      const envEx = Math.exp(-t / 0.065) * (1 - Math.exp(-t / 0.0015));
+      const xn = (Math.random() * 2 - 1) * envEx;
+      const pipe = bpPipe(xn);
+      const mid = bpMid(xn);
+
+      // ===== 金属敲击（气门/正时齿轮/活塞销，真机最响的成分）=====
+      const envM = Math.exp(-t / 0.04) * (1 - Math.exp(-t / 0.0012));
+      const nz = (Math.random() * 2 - 1) * envM * leak;
+      const hi = bpHi(nz);
+      const vhi = bpVHi(nz);
+      tailLp += tailLpCoef * ((Math.random() * 2 - 1) - tailLp);
+      const tail = tailLp * Math.exp(-t / 0.22) * 0.9;
+
+      let v = pressure * 0.95 + sub * 0.34 + h2 * 3.0
+        + knock * knockAmt * 1.5
+        + pipe * 7.6 + mid * 1.3 + hi * 9.6 + vhi * 0.12 + tail * 3.0;
+      v = Math.tanh(v * 0.82);
+      lpOut += lpCoef * (v - lpOut);
+      d[i] = lpOut;
+      if (Math.abs(lpOut) > peak) peak = Math.abs(lpOut);
+    }
+    for (let i = 0; i < len; i++) d[i] = d[i] / peak * 0.95;
+    return buf;
+  },
+
+  /* ---------- 放炮：燃烧不完全，一声闷炸 ---------- */
+  renderBang(ctx) {
+    const sr = ctx.sampleRate;
+    const len = Math.floor(sr * 0.7);
+    const buf = ctx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    const lpCoef = 1 - Math.exp(-2 * Math.PI * 4800 / sr);
+    const bpBang = this.mkBandpass(sr, 950, 0.75);
+    let lpOut = 0, phase = 0, peak = 1e-6;
+    for (let i = 0; i < len; i++) {
+      const t = i / sr;
+      const f = 44 + 78 * Math.exp(-t / 0.06);
+      phase += 2 * Math.PI * f / sr;
+      const atk = 1 - Math.exp(-t / 0.0008);
+      const body = Math.sin(phase) * Math.exp(-t / 0.10) * atk;
+      const blastRaw = (Math.random() * 2 - 1) * Math.exp(-t / 0.045) * atk;
+      const blast = bpBang(blastRaw) * 3.2;
+      let v = Math.tanh((body * 0.62 + blast * 1.0 + blastRaw * 0.5) * 1.7);
+      lpOut += lpCoef * (v - lpOut);
+      d[i] = lpOut;
+      if (Math.abs(lpOut) > peak) peak = Math.abs(lpOut);
+    }
+    for (let i = 0; i < len; i++) d[i] = d[i] / peak * 0.97;
+    return buf;
+  },
+
+  /* ---------- 手摇启动：一记“咔哒—嗤—咚” ---------- */
+  renderCrankStroke(ctx) {
+    const sr = ctx.sampleRate;
+    const len = Math.floor(sr * 0.56);
+    const buf = ctx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    const R = mulberry32(313);
+
+    const bpLeak = this.mkBandpass(sr, 620, 0.85);   // 压缩漏气
+    const bpMetal = this.mkBandpass(sr, 1850, 1.1);  // 棘轮/摇把金属声
+    const bpRub = this.mkBandpass(sr, 480, 0.7);     // 手把摩擦
+
+    // 棘轮咔哒 2 记
+    const clicks = [0, 0.045 + R() * 0.02];
+    let phase = 0, peak = 1e-6;
+    for (let i = 0; i < len; i++) {
+      const t = i / sr;
+
+      // 棘轮啮合：极短的金属“咔”（宽带爆 + 少量金属共鸣）
+      let click = 0;
+      for (let k = 0; k < clicks.length; k++) {
+        const dt = t - clicks[k];
+        if (dt >= 0) click += (Math.random() * 2 - 1) * Math.exp(-dt / 0.0022);
+      }
+      const metal = bpMetal((Math.random() * 2 - 1) * (t < 0.08 ? Math.exp(-t / 0.006) : 0));
+
+      // 压缩阻力“咚”（抬高基频，免得被 45Hz 低切吃掉）
+      let thud = 0;
+      const tc = t - 0.07;
+      if (tc >= 0) {
+        const f = 64 + 24 * Math.exp(-tc / 0.09);
+        phase += 2 * Math.PI * f / sr;
+        thud = Math.sin(phase) * Math.exp(-tc / 0.09) * (1 - Math.exp(-tc / 0.005));
+      }
+
+      // 压缩漏气“嗤”（从上止点泄漏的空气，最像“手摇”的那一下）
+      const tck = t - 0.05;
+      let hiss = 0;
+      if (tck >= 0) {
+        const envN = Math.exp(-tck / 0.12) * (1 - Math.exp(-tck / 0.012));
+        hiss = bpLeak((Math.random() * 2 - 1) * envN);
+      }
+
+      // 摇把摩擦（低频噪声，模拟手把转动）
+      const rub = bpRub((Math.random() * 2 - 1) * 0.5);
+
+      let v = Math.tanh((click * 2.6 + metal * 2.0 + thud * 1.05 + hiss * 5.6 + rub * 1.5) * 1.2);
+      d[i] = v;
+      if (Math.abs(v) > peak) peak = Math.abs(v);
+    }
+    for (let i = 0; i < len; i++) d[i] = d[i] / peak * 0.92;
+    return buf;
+  },
+
+  /* ---------- 噪声床（棕噪声，循环） ---------- */
+  renderNoiseBed(ctx) {
+    const sr = ctx.sampleRate;
+    const dur = 2.0, len = Math.floor(sr * dur);
+    const buf = ctx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    let brown = 0, peak = 1e-6;
+    for (let i = 0; i < len; i++) {
+      brown += (Math.random() * 2 - 1) * 0.06;
+      brown *= 0.995;
+      d[i] = brown;
+      if (Math.abs(brown) > peak) peak = Math.abs(brown);
+    }
+    for (let i = 0; i < len; i++) d[i] = d[i] / peak * 0.9;
+    const fade = Math.floor(sr * 0.12);
+    for (let i = 0; i < fade; i++) {
+      const k = i / fade;
+      d[i] = d[i] * k + d[len - fade + i] * (1 - k);
+    }
+    return buf;
+  },
+
+  /* ---------- 常驻声部：低频车体轰鸣（噪声 + 燃烧频率调制） ---------- */
+  startVoices() {
+    if (!this.ctx || this.rumbleSrc) return;
+    const ctx = this.ctx;
+
+    const src = ctx.createBufferSource();
+    src.buffer = this.bufs.bed;
+    src.loop = true;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 160; lp.Q.value = 1.1;
+    const pk = ctx.createBiquadFilter();
+    pk.type = 'peaking'; pk.frequency.value = 115; pk.Q.value = 1.1; pk.gain.value = 4;
+    const mod = ctx.createGain();
+    mod.gain.value = 0.55;
+    const g = ctx.createGain();
+    g.gain.value = 0.0001;
+    // 燃烧频率 LFO 给轰鸣加“突—突—”的脉动（不是音调，是节奏）
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 8;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 0.4;
+    lfo.connect(lfoGain); lfoGain.connect(mod.gain);
+
+    src.connect(lp); lp.connect(pk); pk.connect(mod); mod.connect(g); g.connect(this.bus);
+    src.start(); lfo.start();
+
+    // 机械噪底（很轻的一层）
+    const bed = ctx.createBufferSource();
+    bed.buffer = this.bufs.bed;
+    bed.loop = true;
+    const bedFilter = ctx.createBiquadFilter();
+    bedFilter.type = 'bandpass'; bedFilter.frequency.value = 900; bedFilter.Q.value = 0.7;
+    const bedGain = ctx.createGain();
+    bedGain.gain.value = 0.0001;
+    bed.connect(bedFilter); bedFilter.connect(bedGain); bedGain.connect(this.bus);
+    bed.start();
+
+    this.rumbleSrc = src; this.rumbleLp = lp; this.rumbleMod = mod; this.rumbleGain = g;
+    this.lfo = lfo; this.lfoGain = lfoGain;
+    this.bed = bed; this.bedFilter = bedFilter; this.bedGain = bedGain;
+  },
+
+  updateVoices(load, level) {
+    if (!this.ctx || !this.rumbleSrc) return;
+    const t = this.ctx.currentTime;
+    const fireHz = this.rpm / 120;
+    try {
+      this.lfo.frequency.setTargetAtTime(clamp(fireHz, 3.5, 26), t, 0.12);
+      this.lfoGain.gain.setTargetAtTime(0.12 + load * 0.36, t, 0.12);
+      this.rumbleLp.frequency.setTargetAtTime(150 + load * 130, t, 0.12);
+      // 真机循环已含低频，常驻轰鸣补“推力”体感——负荷越大推得越狠
+      this.rumbleGain.gain.setTargetAtTime((0.045 + 0.20 * load) * level, t, 0.15);
+      this.bedFilter.frequency.setTargetAtTime(1100 + load * 1400, t, 0.12);
+      this.bedGain.gain.setTargetAtTime((0.010 + 0.075 * load) * level, t, 0.15);
+      /* 音色随负荷变“凶”：怠速闷而软，拉满时低频更厚、金属更硬、整体更亮 */
+      this.eqHp.frequency.setTargetAtTime(40 - load * 13, t, 0.12);
+      this.eqPeakF.gain.setTargetAtTime(1.2 + load * 4.5, t, 0.12);
+      this.eqPeakH.gain.setTargetAtTime(0.5 + load * 3.2, t, 0.12);
+      this.lp.frequency.setTargetAtTime(6000 + load * 3400, t, 0.12);
+    } catch (e) { /* ignore */ }
+  },
+
+  stopVoices(fade) {
+    const ctx = this.ctx;
+    const f = fade || 0.25;
+    if (!ctx) return;
+    try {
+      if (this.rumbleGain) this.rumbleGain.gain.setTargetAtTime(0.0001, ctx.currentTime, f / 3);
+      if (this.bedGain) this.bedGain.gain.setTargetAtTime(0.0001, ctx.currentTime, f / 3);
+    } catch (e) { /* ignore */ }
+    const src = this.rumbleSrc, bed = this.bed, lfo = this.lfo;
+    setTimeout(() => {
+      try { src && src.stop(); } catch (e) {}
+      try { bed && bed.stop(); } catch (e) {}
+      try { lfo && lfo.stop(); } catch (e) {}
+    }, f * 1000 + 150);
+    this.rumbleSrc = null; this.rumbleLp = null; this.rumbleMod = null; this.rumbleGain = null;
+    this.lfo = null; this.lfoGain = null;
+    this.bed = null; this.bedFilter = null; this.bedGain = null;
+  },
+
+  /* ---------- 播放工具 ---------- */
+  fireAt(when, gain, load) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const arr = this.bufs.fire;
+    const src = ctx.createBufferSource();
+    // 轮换循环，避免同一段反复触发听出机械感
+    let k = (Math.random() * arr.length) | 0;
+    if (arr.length > 1 && k === this.lastGrain) k = (k + 1) % arr.length;
+    this.lastGrain = k;
+    src.buffer = arr[k];
+    const g = ctx.createGain();
+
+    if (this.bufs.sampleFire) {
+      // 真机循环：柴油机不变调，只留 ±2% 抖动；转速越高循环重叠得越多
+      src.playbackRate.value = (1 + load * 0.18) * (0.985 + Math.random() * 0.03);
+      const period = 120 / Math.max(220, this.rpm);
+      const overlap = Math.max(1, this.sampleDur / period);
+      // 真机转速越高越响：负荷加成 +95%，重叠补偿只做一半（补偿过头会把高转压平，听起来“没劲”）
+      g.gain.value = this.fireTrim * gain * (1 + load * 0.95)
+        * (0.94 + Math.random() * 0.12) / Math.pow(overlap, 0.42);
+    } else {
+      // 兜底合成音
+      src.playbackRate.value = 0.99 + (Math.random() - 0.5) * 0.03;
+      g.gain.value = gain * (0.92 + Math.random() * 0.16);
+    }
+    src.connect(g); g.connect(this.bus);
+    // 烟跟着点火走：排进队列，渲染循环按音频时钟对齐后喷烟圈
+    if (typeof smokeQueue !== 'undefined') smokeQueue.push(when);
+    src.start(when);
+  },
+
+  playBuf(buf, when, rate, gain, dest) {
+    if (!this.ctx) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.value = rate;
+    const g = this.ctx.createGain();
+    g.gain.value = gain;
+    src.connect(g); g.connect(dest || this.bus);
+    src.start(when);
+  },
+
+  /* ---------- 手摇启动 ---------- */
+  beginCrank() {
+    if (this.state !== 'off') return;
+    if (!this.ensureCtx()) return;
+    const ctx = this.ctx;
+    this.state = 'cranking';
+    this.crankStartTs = Date.now();
+    this.catchDelay = 1600 + Math.random() * 1300;
+    this.master.gain.cancelScheduledValues(ctx.currentTime);
+    this.master.gain.setValueAtTime(0.0001, ctx.currentTime);
+    this.master.gain.linearRampToValueAtTime(VOLUME * 0.85, ctx.currentTime + 0.15);
+    const now = ctx.currentTime + 0.05;
+    this.nextChuff = now;
+    this.nextFire = now;
+    if (!this.timer) this.timer = setInterval(() => this.schedule(), 25);
+  },
+
+  abortCrank() {
+    if (this.state !== 'cranking') return;
+    this.shutdown(0.2);
+    if (this.onDie) this.onDie('crankAborted');
+  },
+
+  /* ---------- 主调度 ---------- */
+  schedule() {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    if (this.state === 'cranking') {
+      const elapsed = Date.now() - this.crankStartTs;
+      const remain = this.catchDelay - elapsed;
+      const prog = clamp(1 - remain / this.catchDelay, 0, 1);
+      // 手摇节奏：有真实启动录音就按整段循环，没有则用合成“咔哒—嗤—咚”，越摇越急
+      const tempo = 0.62 - 0.24 * prog;
+      const real = this.bufs.crankReal;
+      let guard = 0;
+      while (this.nextChuff < now + 0.3 && guard < 8) {
+        if (real) {
+          // 真实录音本身峰值归一化过，压到与怠速运转相近的响度
+          this.playBuf(real, this.nextChuff, 1.0, 0.52);
+          this.nextChuff += real.duration * (0.97 + Math.random() * 0.06);
+        } else {
+          this.playBuf(this.bufs.crank, this.nextChuff,
+            1.0 + (Math.random() - 0.5) * 0.04, 0.95);
+          this.nextChuff += tempo * (0.96 + Math.random() * 0.08);
+        }
+        guard++;
+      }
+      if (guard >= 8) this.nextChuff = now + 0.05;
+      if (remain <= 0) {
+        this.state = 'catching';
+        this.catchStart = now;
+        this.nextFire = now + 0.02;
+        this.willFail = Math.random() < FAIL_RATE;
+        this.failAt = 0.8 + Math.random() * 0.6;
+        this.startVoices();
+        if (this.onCatch) this.onCatch();
+      }
+      return;
+    }
+
+    if (this.state === 'catching') {
+      const el = now - this.catchStart;
+
+      if (this.willFail) {
+        let guard = 0;
+        while (this.nextFire < now + 0.22 && guard < 10) {
+          if (Math.random() < 0.5) {
+            this.playBuf(this.bufs.bang, this.nextFire, 0.94, 0.85);
+          } else {
+            this.fireAt(this.nextFire, 0.5, 0.1);
+          }
+          this.nextFire += 0.21 + Math.random() * 0.22;
+          guard++;
+        }
+        if (guard >= 10) this.nextFire = now + 0.05;
+        this.rpm = 400 + Math.sin(el * 8) * 50;
+        this.updateVoices(0.04, 0.45);
+        if (el > this.failAt) {
+          this.playBuf(this.bufs.bang, now + 0.02, 0.85, 1.0);
+          this.shutdown(0.28, true);
+          if (this.onFail) this.onFail();
+        }
+        return;
+      }
+
+      const prog = clamp(el / 1.8, 0, 1);
+      this.rpm = 420 + prog * (IDLE_RPM - 420);
+      const interval = 120 / this.rpm;
+      let guard = 0;
+      while (this.nextFire < now + 0.22 && guard < 24) {
+        const jitter = 1 + (1 - prog) * (Math.random() - 0.5) * 0.55;
+        if (Math.random() < 0.14 * (1 - prog)) {
+          this.playBuf(this.bufs.bang, this.nextFire, 0.9, 1.0);
+        } else {
+          this.fireAt(this.nextFire, 0.6 + prog * 0.35, prog);
+        }
+        this.nextFire += interval * jitter;
+        guard++;
+      }
+      if (guard >= 24) this.nextFire = now + 0.05;
+      this.updateVoices(loadOf(this.rpm), 0.5 + prog * 0.5);
+      if (prog >= 1) {
+        this.state = 'running';
+        const pending = state.pendingRpm;
+        state.pendingRpm = null;
+        this.targetRpm = pending !== null ? clamp(pending, IDLE_RPM, MAX_RPM) : IDLE_RPM;
+        // 着了！先轰一脚：1.15 秒内从高位落回怠速/当前油门
+        this.roarT = 1.15;
+        this.roarAmp = 1350;
+        this._runLast = now;
+        this.rpm = clamp(this.targetRpm + this.roarAmp, IDLE_RPM, MAX_RPM);
+        this.roarHit(now + 0.01);
+        if (this.onRun) this.onRun();
+        if (window.onEngineStarted) window.onEngineStarted();   // 打赏计数钩子
+      }
+      return;
+    }
+
+    if (this.state === 'running') {
+      const last = this._runLast || now;
+      const dt = clamp(now - last, 0.005, 0.1);
+      this._runLast = now;
+      if (this.roarT > 0) {
+        // 着车那一脚油门：先冲到高位，再快速落回目标转速
+        this.roarT = Math.max(0, this.roarT - dt);
+        const k = this.roarT / 1.15;
+        this.rpm = clamp(Math.round(this.targetRpm + this.roarAmp * k * k), IDLE_RPM, MAX_RPM);
+      } else {
+        this.rpm = this.targetRpm;
+      }
+      const interval = 120 / this.rpm;
+      const load = loadOf(this.rpm);
+      let guard = 0;
+      while (this.nextFire < now + 0.2 && guard < 28) {
+        this.fireAt(this.nextFire, 0.68 + load * 0.42, load);
+        this.nextFire += interval * (1 + (Math.random() - 0.5) * 0.035);
+        guard++;
+      }
+      if (guard >= 28) this.nextFire = now + 0.05;
+      this.updateVoices(load, 1);
+      return;
+    }
+
+    if (this.state === 'stopping') {
+      const last = this._lastSched === undefined ? now : this._lastSched;
+      const dt = clamp(now - last, 0.005, 0.1);
+      this._lastSched = now;
+      this.rpm = Math.max(230, this.rpm * Math.exp(-dt * 1.45));
+      const interval = 120 / this.rpm;
+      let guard = 0;
+      while (this.nextFire < now + 0.25 && guard < 12) {
+        this.fireAt(this.nextFire, 0.45 * (this.rpm / IDLE_RPM) + 0.12, 0);
+        this.nextFire += interval * 1.08;
+        guard++;
+      }
+      this.updateVoices(0, clamp(this.rpm / IDLE_RPM, 0.25, 1));
+      if (this.rpm <= 252) {
+        this.shutdown(0.3, true);
+        if (this.onDie) this.onDie('natural');
+      }
+      return;
+    }
+  },
+
+  setRpm(rpm) {
+    const v = clamp(Math.round(rpm), IDLE_RPM, MAX_RPM);
+    this.targetRpm = v;
+    if (this.state !== 'running') {
+      state.pendingRpm = v;
+      return;
+    }
+    if (this.roarT <= 0) this.rpm = v;   // 轰油期间不抢转速，让它把这一脚轰完
+  },
+
+  requestStop() {
+    if (this.state === 'cranking') { this.shutdown(0.2); return; }
+    if (this.state === 'catching' || this.state === 'running') {
+      this.state = 'stopping';
+      smoke.stopT = 1.1;              // 熄火时突突喷几口浓烟
+      this._lastSched = undefined;
+    }
+  },
+
+  /* 着车瞬间那一声“轰”：低频下坠 + 排气噪声爆发，叠在真实循环上增加体感 */
+  roarHit(when) {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(115, when);
+      o.frequency.exponentialRampToValueAtTime(34, when + 0.55);
+      const og = ctx.createGain();
+      og.gain.setValueAtTime(0.0001, when);
+      og.gain.exponentialRampToValueAtTime(0.72, when + 0.035);
+      og.gain.exponentialRampToValueAtTime(0.0001, when + 0.95);
+      o.connect(og); og.connect(this.bus);
+      o.start(when); o.stop(when + 1.0);
+
+      const n = ctx.createBufferSource();
+      n.buffer = this.bufs.bed;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass'; bp.Q.value = 0.9;
+      bp.frequency.setValueAtTime(900, when);
+      bp.frequency.exponentialRampToValueAtTime(230, when + 0.6);
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.0001, when);
+      ng.gain.exponentialRampToValueAtTime(0.42, when + 0.03);
+      ng.gain.exponentialRampToValueAtTime(0.0001, when + 0.8);
+      n.connect(bp); bp.connect(ng); ng.connect(this.bus);
+      n.start(when); n.stop(when + 0.85);
+    } catch (e) { /* ignore */ }
+  },
+
+  /* 熄火停机那一下“咔哒”：断油阀+曲轴停住的机械声 */
+  clickNow() {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const t = ctx.currentTime + 0.03;
+      const dur = 0.14, sr = ctx.sampleRate;
+      const buf = ctx.createBuffer(1, Math.ceil(sr * dur), sr);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) {
+        const x = i / sr;
+        // 硬起音的“咔” + 一点余震
+        const env = Math.exp(-x / 0.010) + 0.35 * Math.exp(-x / 0.045);
+        d[i] = (Math.random() * 2 - 1) * env;
+      }
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass'; bp.frequency.value = 2350; bp.Q.value = 1.3;
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass'; hp.frequency.value = 1100;
+      const g = ctx.createGain(); g.gain.value = 0.55;
+      src.connect(bp); bp.connect(hp); hp.connect(g);
+      g.connect(ctx.destination);       // 绕过 master：熄火淡出后仍听得见
+      src.start(t);
+
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(150, t);
+      o.frequency.exponentialRampToValueAtTime(70, t + 0.07);
+      const og = ctx.createGain();
+      og.gain.setValueAtTime(0.3, t);
+      og.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+      o.connect(og); og.connect(ctx.destination);
+      o.start(t); o.stop(t + 0.14);
+    } catch (e) { /* ignore */ }
+  },
+
+  shutdown(fade, withClick) {
+    if (withClick) this.clickNow();
+    this.state = 'off';
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    this.stopVoices(fade);
+    const ctx = this.ctx, master = this.master;
+    if (ctx && master) {
+      try {
+        master.gain.cancelScheduledValues(ctx.currentTime);
+        master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+        master.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + fade);
+      } catch (e) { /* ignore */ }
+    }
+    const c = ctx;
+    setTimeout(() => { try { if (c) c.close(); } catch (e) { /* ignore */ } }, Math.max(500, fade * 1000 + 400));
+    this.ctx = null; this.master = null; this.bus = null; this.lp = null;
+    this.rumbleSrc = null; this.bed = null;
+    this.rpm = IDLE_RPM;
+    this.targetRpm = IDLE_RPM;
+    this.roarT = 0;
+    this._runLast = 0;
+    /* 熄火 → 油门拉杆自动回位 */
+    try { if (typeof resetThrottle === 'function') resetThrottle(true); } catch (e) { /* ignore */ }
+  }
+};
+
+/* ================= 顶部仪表（非圆形 LED 分段） ================= */
+const spdSegs = document.getElementById('spdSegs');
+const rpmSegs = document.getElementById('rpmSegs');
+const spdVal = document.getElementById('spdVal');
+const rpmBig = document.getElementById('rpmBig');
+const rpmGauge = document.getElementById('rpmGauge');
+
+const SPD_MAX = 200;       // 时速表量程 200 km/h
+const SPD_SEGS = 20;       // 20 格，每格 10 km/h（与转速表同密度）
+const SPD_PER_SEG = SPD_MAX / SPD_SEGS;
+const RPM_SEGS = 24;   // 转速表 0~24（×100）
+
+function buildSegs(box, count, warnFrom, hotFrom) {
+  const arr = [];
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement('div');
+    d.className = 'seg';
+    if (i >= hotFrom) d.classList.add('hot');
+    else if (warnFrom !== null && i >= warnFrom) d.classList.add('warn');
+    box.appendChild(d);
+    arr.push(d);
+  }
+  return arr;
+}
+const spdSegEls = buildSegs(spdSegs, SPD_SEGS, 14, 18);
+const rpmSegEls = buildSegs(rpmSegs, RPM_SEGS, 16, 20);
+
+const segCache = { spd: -1, rpm: -1 };
+function paintSegs(els, count, key) {
+  const n = clamp(count, 0, els.length);
+  if (segCache[key] === n) return;
+  for (let i = 0; i < els.length; i++) {
+    els[i].classList.toggle('on', i < n);
+  }
+  segCache[key] = n;
+}
+
+function updateGauges() {
+  const off = engine.state === 'off';
+  const shownRpm = off ? 0 : anim.shownRpm;
+  rpmBig.textContent = Math.round(shownRpm);
+  paintSegs(rpmSegEls, Math.round(shownRpm / 100), 'rpm');
+  rpmGauge.classList.toggle('redline', shownRpm >= 2000);
+
+  const kmh = state.gpsState === 'connected' ? state.kmh : 0;
+  spdVal.textContent = kmh.toFixed(1);
+  paintSegs(spdSegEls, Math.ceil(kmh / SPD_PER_SEG), 'spd');
+}
+
+/* ================= HUD 刷新 ================= */
+const statText = document.getElementById('statText'),
+      thrHud = document.getElementById('thrHud'),
+      gpsVal = document.getElementById('gpsVal'),
+      gpsLed = document.getElementById('gpsLed');
+
+const STATUS_IDLE = '熄火 · 按住拖拉机摇车启动';
+let statTimer = null;
+function setStatus(text, cls, tempMs) {
+  clearTimeout(statTimer);
+  statText.textContent = text;
+  statText.className = 'stat' + (cls ? ' ' + cls : '');
+  if (tempMs) {
+    statTimer = setTimeout(() => { statText.textContent = STATUS_IDLE; statText.className = 'stat'; }, tempMs);
+  }
+}
+
+function refreshHud() {
+  thrHud.textContent = state.gpsMode ? 'GPS 驱动' : '油门 ' + state.throttle + '%';
+  gpsVal.textContent = 'GPS ' + (state.gpsState === 'connected' ? state.kmh.toFixed(1) : '--.-');
+  gpsLed.className = 'led ' + (
+    state.gpsState === 'connected' ? 'green' :
+    state.gpsState === 'requesting' ? 'amber' :
+    state.gpsState === 'error' ? 'red' : '');
+}
+
+/* ================= 拖拉机本体 = 启动按钮 ================= */
+const stage = document.getElementById('stage');
+const underglow = document.getElementById('underglow');
+let pressing = false;
+
+function tractorDown(e) {
+  e.preventDefault();
+  if (engine.state === 'off') {
+    // 按住摇车
+    pressing = true;
+    stage.classList.add('cranking');
+    engine.beginCrank();
+    if (engine.state !== 'cranking') {
+      // 设备没有 WebAudio，点不动
+      stage.classList.remove('cranking');
+      pressing = false;
+      setStatus('当前环境不支持音频播放', 'fail', 2500);
+      return;
+    }
+    engine.onCatch = () => {
+      setStatus('着火了！燃烧不稳…');
+      try { navigator.vibrate && navigator.vibrate(40); } catch (err) {}
+    };
+    engine.onRun = () => {
+      stage.classList.remove('cranking');
+      pressing = false;
+      setStatus(state.gpsMode ? 'GPS 跟速运转中' : '运转中 · 点一下熄火');
+    };
+    engine.onFail = () => {
+      stage.classList.remove('cranking');
+      pressing = false;
+      setStatus('启动失败！再来一次', 'fail', 2500);
+      try { navigator.vibrate && navigator.vibrate([70, 50, 70]); } catch (err) {}
+    };
+    engine.onDie = () => {
+      stage.classList.remove('cranking');
+      pressing = false;
+      if (!statTimer) setStatus(STATUS_IDLE);
+    };
+    setStatus('摇车中… 咔哒—嗤—咚');
+  } else if (engine.state === 'running' || engine.state === 'catching' || engine.state === 'stopping') {
+    // 运转中点按 = 熄火
+    engine.requestStop();
+    setStatus('正在熄火…');
+  }
+  refreshHud();
+}
+function tractorUp() {
+  if (!pressing) return;
+  pressing = false;
+  if (engine.state === 'cranking') {
+    // 没摇到火就松手
+    stage.classList.remove('cranking');
+    engine.abortCrank();
+    setStatus('没摇着 · 按住别松手再试', 'fail', 2200);
+  }
+  refreshHud();
+}
+stage.addEventListener('pointerdown', tractorDown);
+window.addEventListener('pointerup', tractorUp);
+window.addEventListener('pointercancel', tractorUp);
+window.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ================= 浓烟滚滚 ================= */
+const smokeCv = document.getElementById('smoke');
+const sctx = smokeCv.getContext('2d');
+const smokeQueue = [];            // 待喷烟的点火时刻（音频时钟）
+const smoke = { parts: [], acc: 0, stopT: 0, crankT: 0, dpr: 1 };
+const PIPE = { x: 0.075, y: 0.40 };   // 排气管口在图中的比例位置（左弯管，朝左上排气）
+
+function makePuff(r, g, b) {
+  /* 不规则烟团：多个随机偏移的软圆叠加，杜绝"完美圆形" */
+  const s = 160, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g2 = c.getContext('2d');
+  const blobs = 4 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < blobs; i++) {
+    const bx = s / 2 + (Math.random() - 0.5) * s * 0.3;
+    const by = s / 2 + (Math.random() - 0.5) * s * 0.3;
+    const br = s * (0.2 + Math.random() * 0.2);
+    const gr = g2.createRadialGradient(bx, by, br * 0.08, bx, by, br);
+    gr.addColorStop(0,   'rgba(' + r + ',' + g + ',' + b + ',.5)');
+    gr.addColorStop(0.55,'rgba(' + r + ',' + g + ',' + b + ',.24)');
+    gr.addColorStop(1,   'rgba(' + r + ',' + g + ',' + b + ',0)');
+    g2.fillStyle = gr;
+    g2.beginPath();
+    g2.arc(bx, by, br, 0, 6.2832);
+    g2.fill();
+  }
+  return c;
+}
+/* 每种烟做 3 个随机变体，粒子随机取用 + 随机自转 */
+function makePuffSet(r, g, b) { return [makePuff(r,g,b), makePuff(r,g,b), makePuff(r,g,b)]; }
+const puffLight = makePuffSet(148, 150, 158);  // 怠速淡灰
+const puffDark  = makePuffSet(20, 20, 26);     // 高负荷浓黑
+const puffGold  = makePuffSet(255, 205, 70);   // 金主彩蛋：黄金烟
+
+function resizeSmoke() {
+  smoke.dpr = Math.min(2, window.devicePixelRatio || 1);
+  const r = smokeCv.getBoundingClientRect();
+  smokeCv.width  = Math.max(2, Math.round(r.width  * smoke.dpr));
+  smokeCv.height = Math.max(2, Math.round(r.height * smoke.dpr));
+}
+window.addEventListener('resize', resizeSmoke);
+resizeSmoke();
+
+function spawnPuff(o) {
+  const wr = smokeCv.getBoundingClientRect();
+  const ir = tractorImg.getBoundingClientRect();
+  if (!ir.width || !wr.width) return;
+  const px = ir.left - wr.left + ir.width  * PIPE.x;
+  const py = ir.top  - wr.top  + ir.height * PIPE.y;
+  const s = smoke.parts;
+  if (s.length > 180) s.splice(0, s.length - 180);
+  s.push({
+    x: px + (Math.random() - 0.5) * 8,
+    y: py + (Math.random() - 0.5) * 8,
+    vx: o.vx, vy: o.vy,
+    r: o.r * (0.7 + Math.random() * 0.6),          // 大小随机
+    grow: o.grow * (0.7 + Math.random() * 0.7),    // 膨胀随机
+    a: o.a, fade: o.fade, dark: o.dark,
+    rot: Math.random() * 6.2832,                    // 随机初始朝向
+    spin: (Math.random() - 0.5) * 1.6,              // 翻滚角速度
+    vi: (Math.random() * 3) | 0,                    // 精灵变体
+    spark: !!o.spark,
+    seed: Math.random() * 6.28, t: 0
+  });
+}
+
+/* 金主彩蛋：排气口偶尔蹦一粒金星子 */
+function spawnSpark() {
+  spawnPuff({
+    vx: -(0.8 + Math.random() * 1.6),
+    vy: -(1.4 + Math.random() * 2.2),
+    r: 2.5 + Math.random() * 2.5,
+    grow: 3, a: 0.95, fade: 1.5, dark: 0, spark: true
+  });
+}
+
+/* 一次点火喷出的烟圈：负荷越大越多越浓喷得越远（满油门铺屏级） */
+function smokeBurst(load) {
+  const n = 1 + Math.round(load * 4);
+  for (let i = 0; i < n; i++) {
+    const v = 0.7 + Math.random() * 0.7;
+    const dir = Math.random() - 0.82;          // 主体向左上，少数烟团向右飘散铺屏
+    spawnPuff({
+      vx: dir * (0.9 + load * 3.0) * v,
+      vy: -(0.9 + load * 2.6) * v,
+      r: 10 + load * 16,
+      grow: 55 + load * 170,
+      a: 0.11 + load * 0.2,
+      fade: 0.075 + (1 - load) * 0.055,
+      dark: 0.15 + load * 0.8
+    });
+  }
+}
+
+function smokeStep(dt) {
+  const st = engine.state;
+  /* ---- 生成 ---- */
+  if (st === 'running') {
+    const load = loadOf(engine.rpm);
+    const gold = document.body.classList.contains('gold');
+    if (gold && Math.random() < dt * 14) spawnSpark();   // 金主版：火星子乱蹦
+    /* 连续底烟：怠速一缕细烟，满油门铺全屏但保持通透 */
+    smoke.acc += (3 + load * 24) * dt;
+    while (smoke.acc >= 1) {
+      smoke.acc--;
+      const v = 0.7 + Math.random() * 0.7;
+      const dir = Math.random() - 0.82;
+      spawnPuff({
+        vx: dir * (0.7 + load * 2.8) * v,
+        vy: -(1.1 + load * 3.2) * v,
+        r: 7 + load * 14,
+        grow: 55 + load * 160,
+        a: 0.10 + load * 0.16,
+        fade: 0.07 + (1 - load) * 0.05,
+        dark: 0.12 + load * 0.7
+      });
+    }
+    const now = engine.ctx ? engine.ctx.currentTime : 0;
+    let guard = 0;
+    while (smokeQueue.length && smokeQueue[0] <= now && guard++ < 8) {
+      smokeQueue.shift();
+      smokeBurst(load);                              // 对齐点火的“突突”烟圈
+    }
+    if (smokeQueue.length > 24) smokeQueue.length = 0; // 兜底防积压
+  } else if (st === 'cranking' || st === 'catching') {
+    smoke.crankT -= dt;
+    if (smoke.crankT <= 0) {                          // 摇车时一缕缕白烟
+      smoke.crankT = 0.32 + Math.random() * 0.26;
+      spawnPuff({ vx: -(0.4 + Math.random() * 0.5), vy: -(0.9 + Math.random() * 0.7),
+        r: 6, grow: 26, a: 0.13, fade: 0.13, dark: 0.25 });
+    }
+  } else if (st === 'stopping') {
+    if (smoke.stopT > 0) {                            // 熄火突突几大口黑烟
+      smoke.stopT -= dt;
+      smoke.acc += 26 * dt;
+      while (smoke.acc >= 1) { smoke.acc--; smokeBurst(0.75); }
+    }
+  } else {
+    smoke.acc = 0;
+  }
+
+  /* ---- 更新 + 绘制 ---- */
+  const W = smokeCv.width / smoke.dpr, H = smokeCv.height / smoke.dpr;
+  sctx.setTransform(smoke.dpr, 0, 0, smoke.dpr, 0, 0);
+  sctx.clearRect(0, 0, W, H);
+  /* 仪表保护区：数字必须可见，烟飘进来自动加速消散 */
+  const safeRects = [];
+  const gsEl = document.querySelector('.gauge.speed');
+  const grEl = document.querySelector('.gauge.rpm');
+  if (gsEl) { const r = gsEl.getBoundingClientRect(); safeRects.push({ l: r.left - 6, t: r.top - 6, r: r.right + 6, b: r.bottom + 6 }); }
+  if (grEl) { const r = grEl.getBoundingClientRect(); safeRects.push({ l: r.left - 6, t: r.top - 6, r: r.right + 6, b: r.bottom + 6 }); }
+  const parts = smoke.parts;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    p.t += dt;
+    p.x += p.vx * 60 * dt + Math.sin(p.t * 2.4 + p.seed) * 32 * dt; // 湍流摆动
+    p.y += p.vy * 60 * dt;
+    p.vx *= (1 - 0.7 * dt);                          // 空气阻尼
+    p.vy -= 0.72 * dt;                               // 热浮力：越飘越往上
+    p.r += p.grow * dt / (1 + p.r / 140);            // 膨胀随尺寸衰减，杜绝巨型烟团
+    p.rot += p.spin * dt;                            // 烟团翻滚
+    p.a -= p.fade * dt * (0.7 + p.r / 95);           // 大了以后加速消散
+    /* 用"圆盘是否压到仪表区"判断（不是圆心），大烟团擦边也算 */
+    let inSafe = false;
+    for (let k = 0; k < safeRects.length; k++) {
+      const s = safeRects[k];
+      const dx = Math.max(s.l - p.x, 0, p.x - s.r);
+      const dy = Math.max(s.t - p.y, 0, p.y - s.b);
+      if (dx * dx + dy * dy < p.r * p.r) { inSafe = true; break; }
+    }
+    if (inSafe) p.a -= dt * 3.2;                     // 压到仪表的烟加速消散
+    if (p.a <= 0.005 || p.x < -p.r * 2 || p.y < -p.r * 2) {
+      parts.splice(i, 1);
+      continue;
+    }
+    const d = p.r * 2;
+    sctx.save();
+    sctx.translate(p.x, p.y);
+    if (p.spark) {
+      sctx.globalAlpha = Math.min(1, p.a);
+      sctx.fillStyle = '#ffdf6e';
+      sctx.beginPath();
+      sctx.arc(0, 0, p.r, 0, 6.2832);
+      sctx.fill();
+      sctx.globalAlpha = Math.min(1, p.a) * 0.35;
+      sctx.beginPath();
+      sctx.arc(0, 0, p.r * 2.4, 0, 6.2832);
+      sctx.fill();
+    } else {
+      sctx.globalAlpha = Math.min(1, p.a);
+      sctx.rotate(p.rot);
+      if (document.body.classList.contains('gold')) {
+        sctx.drawImage(puffGold[p.vi], -p.r, -p.r, d, d);
+      } else {
+        sctx.drawImage(puffLight[p.vi], -p.r, -p.r, d, d);
+        if (p.dark > 0.03) {
+          sctx.globalAlpha *= Math.min(1, p.dark);
+          sctx.drawImage(puffDark[p.vi], -p.r, -p.r, d, d);
+        }
+      }
+    }
+    sctx.restore();
+  }
+  /* 仪表区羽化镂空：无论烟团多大，压到表上的部分直接擦掉，数字永远读得清 */
+  if (safeRects.length) {
+    sctx.globalCompositeOperation = 'destination-out';
+    for (let k = 0; k < safeRects.length; k++) {
+      const s = safeRects[k];
+      const cx = (s.l + s.r) / 2, cy = (s.t + s.b) / 2;
+      const w = s.r - s.l, h = s.b - s.t;
+      const g = sctx.createRadialGradient(cx, cy, Math.min(w, h) * 0.2, cx, cy, Math.max(w, h) * 0.66);
+      g.addColorStop(0,    'rgba(0,0,0,1)');
+      g.addColorStop(0.66, 'rgba(0,0,0,.96)');
+      g.addColorStop(0.86, 'rgba(0,0,0,.55)');
+      g.addColorStop(1,    'rgba(0,0,0,0)');
+      sctx.fillStyle = g;
+      sctx.fillRect(s.l - 10, s.t - 10, w + 20, h + 20);
+    }
+    sctx.globalCompositeOperation = 'source-over';
+  }
+  sctx.globalAlpha = 1;
+}
+
+/* ================= 引擎抖动 + 霓虹底光 ================= */
+const anim = { lastTs: 0, shakeX: 0, shakeY: 0, shownRpm: 0 };
+function tick(ts) {
+  requestAnimationFrame(tick);
+  if (!anim.lastTs) { anim.lastTs = ts; return; }
+  const dt = Math.min(0.05, (ts - anim.lastTs) / 1000);
+  anim.lastTs = ts;
+
+  const running = engine.state === 'running';
+  const load = running ? loadOf(engine.rpm) : 0;
+
+  if (running) {
+    // 真引擎式抖动：负荷越大抖得越凶
+    const amp = 1.2 + load * 3.2;
+    anim.shakeX += ((Math.random() - 0.5) * 2 * amp - anim.shakeX) * 0.55;
+    anim.shakeY += ((Math.random() - 0.5) * 1.2 * amp - anim.shakeY) * 0.55;
+    stage.style.transform = 'translate(' + anim.shakeX.toFixed(2) + 'px,' + anim.shakeY.toFixed(2) + 'px) rotate(' + (anim.shakeX * 0.15).toFixed(3) + 'deg)';
+    underglow.style.opacity = (0.25 + load * 0.75).toFixed(2);
+    underglow.style.filter = 'blur(' + (12 + load * 10).toFixed(0) + 'px)';
+    underglow.style.transform = 'scale(' + (1 + load * 0.3).toFixed(3) + ')';
+    document.body.classList.add('running');
+  } else if (engine.state === 'off') {
+    stage.style.transform = '';
+    underglow.style.opacity = stage.classList.contains('cranking') ? '.35' : '0';
+    underglow.style.transform = '';
+    document.body.classList.remove('running');
+  }
+  // cranking / catching / stopping 交给 CSS 心跳与自然衰减
+
+  // 表针式惯性的数码读数（指针表不稳，数字也晃一点点）
+  let target = engine.state === 'off' ? 0 : engine.rpm;
+  if (running) target += (Math.random() - 0.5) * 55 * (0.3 + load);
+  anim.shownRpm += (target - anim.shownRpm) * Math.min(1, dt * 9);
+  smokeStep(dt);
+  updateGauges();
+}
+requestAnimationFrame(tick);
+
+/* ================= 油门滑条 ================= */
+const throttleEl = document.getElementById('throttle');
+const thrVal = document.getElementById('thrVal');
+const throttleCol = document.getElementById('throttleCol');
+
+function applyThrottle() {
+  const p = state.throttle;
+  thrVal.textContent = p + '%';
+  throttleEl.style.setProperty('--fill', p + '%');
+  throttleEl.style.setProperty('--glow', (p / 100).toFixed(2));
+  if (engine.state === 'running' && !state.gpsMode) {
+    engine.setRpm(IDLE_RPM + p / 100 * (MAX_RPM - IDLE_RPM));
+  }
+}
+throttleEl.addEventListener('input', () => {
+  if (state.gpsMode) return;
+  if (thrAnim) { cancelAnimationFrame(thrAnim); thrAnim = null; }
+  state.throttle = Number(throttleEl.value);
+  applyThrottle();
+  refreshHud();
+});
+
+/* 熄火后油门拉杆自动回位（像真机松手，滑条平滑滑回 0%） */
+let thrAnim = null;
+function resetThrottle(animate) {
+  if (thrAnim) { cancelAnimationFrame(thrAnim); thrAnim = null; }
+  const from = Number(throttleEl.value) || 0;
+  if (!from) { state.throttle = 0; throttleEl.value = 0; applyThrottle(); refreshHud(); return; }
+  if (!animate) {
+    state.throttle = 0; throttleEl.value = 0; applyThrottle(); refreshHud(); return;
+  }
+  const t0 = performance.now(), dur = 340;
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 3);              // 先快后慢，像弹簧回位
+    const v = Math.round(from * (1 - e));
+    throttleEl.value = v;
+    state.throttle = v;
+    applyThrottle();
+    if (k < 1) { thrAnim = requestAnimationFrame(step); }
+    else { thrAnim = null; state.throttle = 0; throttleEl.value = 0; applyThrottle(); refreshHud(); }
+  };
+  thrAnim = requestAnimationFrame(step);
+  /* 兜底：万一动画帧被系统节流（后台/熄屏），定时器强制归零 */
+  setTimeout(() => {
+    if (state.throttle !== 0) {
+      if (thrAnim) { cancelAnimationFrame(thrAnim); thrAnim = null; }
+      state.throttle = 0; throttleEl.value = 0; applyThrottle(); refreshHud();
+    }
+  }, dur + 90);
+}
+
+/* ================= GPS 开关 ================= */
+const gpsSwitch = document.getElementById('gpsSwitch');
+
+function applyExternalRpm() {
+  if (engine.state !== 'running') return;
+  if (state.gpsMode) {
+    engine.setRpm(kmhToRpm(state.kmh));
+  } else {
+    engine.setRpm(IDLE_RPM + state.throttle / 100 * (MAX_RPM - IDLE_RPM));
+  }
+}
+
+function setGpsMode(on) {
+  state.gpsMode = on;
+  gpsSwitch.className = 'gps-switch' + (on ? ' on' : '');
+  throttleCol.classList.toggle('disabled', on);
+  throttleEl.disabled = on;
+  if (on) {
+    startGps();
+    setStatus('GPS 跟速模式 · 速度驱动声浪');
+  } else {
+    stopGps(true);
+    setStatus('手动油门模式 · 拖动滑条加速');
+  }
+  refreshHud();
+}
+gpsSwitch.addEventListener('click', () => {
+  if (privacyMode === 'manual') {
+    showToast('你选择了「仅手动模式」，不会调用定位。想用 GPS 跟速：点「关于」→「查看隐私政策 / 重新授权」');
+    return;
+  }
+  setGpsMode(!state.gpsMode);
+});
+
+/* ================= GPS 速度 ================= */
+function startGps() {
+  if (state.gpsWatchId !== null) return;
+  if (!navigator.geolocation) {
+    state.gpsState = 'error';
+    setStatus('设备不支持定位', 'fail', 2500);
+    setGpsMode(false);
+    refreshHud();
+    return;
+  }
+  state.gpsState = 'requesting';
+  refreshHud();
+  state.gpsWatchId = navigator.geolocation.watchPosition(onLocation, () => {
+    state.gpsState = 'error';
+    setStatus('GPS 信号失败 · 请检查定位授权', 'fail', 3000);
+    setGpsMode(false);
+    refreshHud();
+  }, { enableHighAccuracy: true, maximumAge: 500, timeout: 15000 });
+}
+
+function stopGps(clearState) {
+  if (state.gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(state.gpsWatchId);
+    state.gpsWatchId = null;
+  }
+  state.lastLoc = null;
+  if (clearState) { state.gpsState = 'off'; }
+}
+
+function onLocation(pos) {
+  const now = Date.now();
+  if (now - state.lastUiTs < 200) return;
+  state.lastUiTs = now;
+  state.gpsState = 'connected';
+
+  let kmh = 0;
+  if (pos.coords.speed !== null && pos.coords.speed >= 0 && isFinite(pos.coords.speed)) {
+    kmh = pos.coords.speed * 3.6;
+  } else if (state.lastLoc) {
+    const dt = (now - state.lastLoc.t) / 1000;
+    if (dt > 0.3 && dt < 10) {
+      const d = haversine(state.lastLoc.lat, state.lastLoc.lng, pos.coords.latitude, pos.coords.longitude);
+      kmh = (d / dt) * 3.6;
+    }
+  }
+  state.lastLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude, t: now };
+  state.kmh = clamp(kmh, 0, SPD_MAX);
+  applyExternalRpm();
+  refreshHud();
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+setInterval(() => {
+  if (engine.state === 'running' && state.gpsMode) applyExternalRpm();
+  refreshHud();
+}, 250);
+
+applyThrottle();
+refreshHud();
+updateGauges();
+window.addEventListener('beforeunload', () => engine.shutdown(0.1));
+
+/* ================= 打赏（完全自愿，功能不受影响） ================= */
+const tipMask = document.getElementById('tipMask');
+const tipQrImg = document.getElementById('tipQrImg');
+const tipQuip = document.getElementById('tipQuip');
+const tipAmts = document.getElementById('tipAmts');
+const tipToast = document.getElementById('tipToast');
+const TIP_FILES = { wx: 'assets/tip_wechat.jpg', zfb: 'assets/tip_alipay.jpg' };
+const TIP_AMTS = [
+  { label: '¥1<b>一升柴油</b>',
+    quip: '够拖拉机打个哈欠。它会突突两声表示感谢——就两声，很傲娇。' },
+  { label: '¥3<b>半根火腿肠</b>',
+    quip: '拖拉机不吃这个，但开拖拉机的这位师傅吃，并表示很感动。' },
+  { label: '¥5<b>一桶机油</b>',
+    quip: '喝完这桶，爬坡不喘、拉砖不抖，排出的烟都自带香味（并不会）。' },
+  { label: '<b>领导随意</b>',
+    quip: '金额自己填：一分是缘分，五毛是友情，一块以上就是过命的交情。' }
+];
+let tipAmt = 1, tipTab = 'wx', toastTimer = null;
+
+function showToast(msg) {
+  tipToast.textContent = msg;
+  tipToast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => tipToast.classList.remove('show'), 3400);
+}
+function setTab(t) {
+  tipTab = t;
+  const wx = document.getElementById('tabWx'), zfb = document.getElementById('tabZfb');
+  wx.classList.toggle('on', t === 'wx'); wx.classList.toggle('wx', t === 'wx');
+  zfb.classList.toggle('on', t === 'zfb'); zfb.classList.toggle('zfb', t === 'zfb');
+  tipQrImg.src = TIP_FILES[t];
+}
+function setAmt(i) {
+  tipAmt = i;
+  Array.prototype.forEach.call(tipAmts.children, (b, k) => b.classList.toggle('on', k === i));
+  tipQuip.textContent = TIP_AMTS[i].quip;
+}
+function openTip(auto) {
+  document.getElementById('tipFree').classList.toggle('show', !!auto);
+  tipMask.classList.add('show');
+  setTab(tipTab);
+  setAmt(tipAmt);
+}
+function closeTip() { tipMask.classList.remove('show'); }
+
+document.getElementById('tipBtn').addEventListener('click', () => openTip(false));
+document.getElementById('tipClose').addEventListener('click', closeTip);
+tipMask.addEventListener('click', e => { if (e.target === tipMask) closeTip(); });
+document.getElementById('tabWx').addEventListener('click', () => setTab('wx'));
+document.getElementById('tabZfb').addEventListener('click', () => setTab('zfb'));
+TIP_AMTS.forEach((a, i) => {
+  const b = document.createElement('button');
+  b.innerHTML = a.label;
+  b.addEventListener('click', () => setAmt(i));
+  tipAmts.appendChild(b);
+});
+
+document.getElementById('tipSaveBtn').addEventListener('click', () => {
+  const name = TIP_FILES[tipTab].split('/').pop();
+  if (window.TipBridge && typeof TipBridge.saveTipQr === 'function') {
+    const r = String(TipBridge.saveTipQr(name));
+    if (r.indexOf('ok:') === 0) {
+      showToast('已存进相册「手扶拖拉机」文件夹 ✅\n打开微信/支付宝 → 扫一扫 → 右上角「相册」选它');
+    } else {
+      showToast('保存失败：' + r.slice(4) + '\n长按上方二维码图片也能保存/识别');
+    }
+  } else {
+    showToast('长按上方二维码图片 →「保存图片」或「识别二维码」\n然后去微信/支付宝扫它');
+  }
+});
+
+document.getElementById('tipPaidBtn').addEventListener('click', () => {
+  try { localStorage.setItem('jt_gold', '1'); } catch (e) {}
+  applyGoldEgg();
+  closeTip();
+  showToast('🎖️ 恭喜解锁【镀金尊享版】！\n拖拉机连夜给自己喷了金粉，快去看它的烟！');
+});
+
+/* ---- 金主彩蛋：金拖拉机 + 黄金烟 + 排气火星 ---- */
+function applyGoldEgg() {
+  document.body.classList.add('gold');
+  document.title = '👑 手扶拖拉机声浪模拟器（金主尊享版）';
+}
+try { if (localStorage.getItem('jt_gold') === '1') applyGoldEgg(); } catch (e) {}
+
+/* ---- 着车计数：第 3 次成功着车时温柔弹一次，之后永不自动弹 ---- */
+window.onEngineStarted = function () {
+  let n = 0, shown = true;
+  try {
+    n = parseInt(localStorage.getItem('jt_starts') || '0', 10) + 1;
+    localStorage.setItem('jt_starts', String(n));
+    shown = localStorage.getItem('jt_tipAuto') === '1';
+  } catch (e) { shown = true; }   // 存储异常时宁可永不弹，不打扰
+  if (n >= 3 && !shown) {
+    try { localStorage.setItem('jt_tipAuto', '1'); } catch (e) {}
+    setTimeout(() => openTip(true), 2200);   // 等着车轰鸣回落，不抢戏
+  }
+};
+
+/* ================= 关于 / 免责声明 ================= */
+const aboutMask = document.getElementById('aboutMask');
+const DEV_MAIL = '16386618@qq.com';
+(function syncAboutVer() {
+  const v = document.getElementById('verTag');
+  const av = document.getElementById('aboutVer');
+  if (v && av) av.textContent = v.textContent.trim();
+})();
+function openAbout() { aboutMask.classList.add('show'); }
+function closeAbout() { aboutMask.classList.remove('show'); }
+document.getElementById('aboutBtn').addEventListener('click', openAbout);
+document.getElementById('aboutClose').addEventListener('click', closeAbout);
+document.getElementById('aboutDone').addEventListener('click', closeAbout);
+aboutMask.addEventListener('click', e => { if (e.target === aboutMask) closeAbout(); });
+
+document.getElementById('aboutCopy').addEventListener('click', () => {
+  const okMsg = '邮箱已复制：' + DEV_MAIL + '\n欢迎来信聊拖拉机、提需求、或者单纯夸它两声';
+  const fallback = () => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = DEV_MAIL;
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, DEV_MAIL.length);
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast(okMsg);
+    } catch (e) {
+      showToast('复制没成功，手动记一下：' + DEV_MAIL);
+    }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(DEV_MAIL).then(() => showToast(okMsg)).catch(fallback);
+  } else {
+    fallback();
+  }
+});
+
+/* ================= 隐私政策：首启提示与授权 ================= */
+const privMask = document.getElementById('privMask');
+const privScroll = document.getElementById('privScroll');
+const privState = document.getElementById('privState');
+const PRIV_KEY = 'jt_priv';
+let privacyMode = 'full';      // 'full' 允许定位 | 'manual' 仅手动模式
+
+function readPriv() {
+  try { return localStorage.getItem(PRIV_KEY) || ''; } catch (e) { return ''; }
+}
+function applyPrivacyMode(mode) {
+  privacyMode = (mode === 'manual') ? 'manual' : 'full';
+  document.body.classList.toggle('no-gps', privacyMode === 'manual');
+  if (privacyMode === 'manual') stopGps(true);
+  if (privState) {
+    privState.textContent = privacyMode === 'manual'
+      ? '仅手动模式（已拒绝定位）' : '已同意隐私政策';
+  }
+}
+function openPrivacy() {
+  privMask.classList.add('show');
+  if (privScroll) privScroll.scrollTop = 0;
+  requestAnimationFrame(() => { if (privScroll) privScroll.scrollTop = 0; });
+}
+function closePrivacy() { privMask.classList.remove('show'); }
+function acceptPrivacy(mode) {
+  try { localStorage.setItem(PRIV_KEY, mode); } catch (e) {}
+  applyPrivacyMode(mode);
+  closePrivacy();
+  showToast(mode === 'manual'
+    ? '已选择仅手动模式 · 全部功能可用，不会开启定位'
+    : '已同意隐私政策 · 定位仅在开启 GPS 跟速时使用');
+}
+document.getElementById('privAgree').addEventListener('click', () => acceptPrivacy('full'));
+document.getElementById('privManual').addEventListener('click', () => acceptPrivacy('manual'));
+document.getElementById('privReopen').addEventListener('click', openPrivacy);
+
+/* 首次启动必须让用户阅读并选择，不做遮罩可关闭 */
+(function initPrivacy() {
+  const v = readPriv();
+  if (!v) openPrivacy();
+  else applyPrivacyMode(v);
+})();
+</script>
+</body>
+</html>
