@@ -4,7 +4,7 @@
 
 纯前端单页 · 无需构建 · 完全离线 · 无账号 · 无广告 · 不采集任何个人信息 · 中 / 英 / 日 / 韩四语界面
 
-**[▶ 在线试玩](https://dongchen.jin.github.io/tractor-sound/) ｜ [⬇ 下载 APK](https://github.com/dongchenjin/tractor-sound/releases/latest)**
+**[▶ 在线试玩](https://dongchenjin.github.io/tractor-sound/) ｜ [⬇ 下载 APK](https://github.com/dongchenjin/tractor-sound/releases/latest)**
 
 
 ![界面预览](screenshots/4-full-throttle.jpg)
