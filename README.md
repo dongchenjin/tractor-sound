@@ -6,7 +6,6 @@
 
 **[▶ 在线试玩](https://dongchen.jin.github.io/tractor-sound/) ｜ [⬇ 下载 APK](https://github.com/dongchenjin/tractor-sound/releases/latest)**
 
-> 上面两个链接里的 `<你的GitHub用户名>` 首次建仓后替换成你的用户名即可。
 
 ![界面预览](screenshots/4-full-throttle.jpg)
 
