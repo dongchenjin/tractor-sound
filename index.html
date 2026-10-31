@@ -75,7 +75,8 @@
     text-align: center; margin-top: 2px;
   }
   .title h1 {
-    font-size: 21px; font-weight: 800; letter-spacing: 5px;
+    font-size: clamp(15px, 4.6vw, 21px); font-weight: 800; letter-spacing: 3px;
+    white-space: normal; text-align: center;
     color: #e8fbff;
     text-shadow:
       0 0 6px rgba(0,229,255,.9), 0 0 18px rgba(0,229,255,.55),
@@ -83,7 +84,7 @@
     white-space: nowrap;
   }
   .title p {
-    margin-top: 5px; font-size: 10px; letter-spacing: 4px;
+    margin-top: 5px; font-size: 10px; letter-spacing: 2.5px;
     color: rgba(140,220,255,.55);
   }
 
@@ -332,6 +333,7 @@
 
   .foot {
     margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    flex-wrap: wrap; row-gap: 5px;
     font-size: 9.5px; letter-spacing: 1px; color: rgba(110,150,180,.45);
     white-space: nowrap;
   }
@@ -540,7 +542,32 @@
   }
   #privManual { flex: 1; }
   body.no-gps .gps-switch { opacity: .4; }
-  body.no-gps .gps-switch .lab::after { content: '（已关）'; }
+
+  /* ---- 语言切换 ---- */
+  #langBtn {
+    position: fixed; top: 9px; right: 9px; z-index: 36;
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px 10px; border-radius: 999px; cursor: pointer;
+    font-size: 10.5px; letter-spacing: .5px; color: #7fd4ee;
+    background: rgba(8,20,32,.72); border: 1px solid rgba(0,229,255,.28);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #langBtn:active { background: rgba(0,229,255,.16); }
+  #langMenu {
+    position: fixed; top: 42px; right: 9px; z-index: 37; display: none;
+    flex-direction: column; gap: 2px; padding: 5px;
+    background: rgba(8,20,32,.96); border: 1px solid rgba(0,229,255,.34);
+    border-radius: 12px; box-shadow: 0 10px 28px rgba(0,0,0,.6);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #langMenu.show { display: flex; }
+  #langMenu button {
+    padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer;
+    font-size: 12px; text-align: left; white-space: nowrap;
+    color: #9dbcce; background: transparent;
+  }
+  #langMenu button.on { color: #4de4ff; background: rgba(0,229,255,.12); }
+  #langMenu button:active { background: rgba(0,229,255,.2); }
 
   /* ---- 金主彩蛋：镀金拖拉机 ---- */
   body.gold #tractorImg {
@@ -554,6 +581,14 @@
 </head>
 <body>
 <div class="bg"></div>
+
+<button id="langBtn">🌐 <span id="langCur">中文</span></button>
+<div id="langMenu">
+  <button data-lang="zh">简体中文</button>
+  <button data-lang="en">English</button>
+  <button data-lang="ko">한국어</button>
+  <button data-lang="ja">日本語</button>
+</div>
 <div class="page">
   <div class="title">
     <h1>手扶拖拉机声浪模拟器</h1>
@@ -602,7 +637,7 @@
   </div>
 
   <div class="foot">
-    <span>0~200 km/h · 请先调低音量 · <b id="verTag">v2.6</b></span>
+    <span><span id="footNote">0~200 km/h · 请先调低音量</span> · <b id="verTag">v2.7</b></span>
     <button class="about-btn" id="aboutBtn">关于</button>
     <button class="tip-btn" id="tipBtn">☕ 赏口油钱</button>
   </div>
@@ -612,21 +647,21 @@
 <div id="aboutMask">
   <div class="about-card">
     <button class="tip-close" id="aboutClose">✕</button>
-    <h2>关于这辆拖拉机</h2>
+    <h2 id="abTitle">关于这辆拖拉机</h2>
     <div class="about-sub">
-      手扶拖拉机声浪模拟器 · <span id="aboutVer">v2.4</span><br>
-      S195 单缸柴油机 · 纯前端离线声浪合成
+      <span id="abName">手扶拖拉机声浪模拟器</span> · <span id="aboutVer">v2.6</span><br>
+      <span id="abSub">S195 单缸柴油机 · 纯前端离线声浪合成</span>
     </div>
 
     <div class="about-sec">
-      <h3>项目简介</h3>
-      <p>一个自娱自乐的小玩意儿：把 S195 单缸柴油机的“突突突”塞进手机，用 GPS 速度或油门滑条驱动转速，
+      <h3 id="abIntroH">项目简介</h3>
+      <p id="abIntroP">一个自娱自乐的小玩意儿：把 S195 单缸柴油机的“突突突”塞进手机，用 GPS 速度或油门滑条驱动转速，
       配上摇把启动、排气浓烟和机械咔哒。没有联网、没有账号、没有广告，也不消耗你的流量。</p>
     </div>
 
     <div class="about-sec">
-      <h3>免责声明</h3>
-      <ul class="about-list">
+      <h3 id="abDiscH">免责声明</h3>
+      <ul class="about-list" id="abDiscList">
         <li>本软件是<b>声音模拟娱乐程序</b>，非真实车辆产品，与任何车辆厂商、品牌、型号无关联，也不具备任何驾驶辅助功能。</li>
         <li>请在<b>停车、居家等安全环境</b>下使用。严禁于驾驶、骑行、步行上路或操作机械时使用，因此分心导致的任何后果由使用者自行承担。</li>
         <li>请<b>先调低音量</b>再启动。长时间大音量（尤其戴耳机）可能造成听力损伤，请自行控制音量与时长。</li>
@@ -638,26 +673,27 @@
     </div>
 
     <div class="about-sec">
-      <h3>开发者联系方式</h3>
+      <h3 id="abContactH">开发者联系方式</h3>
       <div class="about-mail">
         <a href="mailto:16386618@qq.com">16386618@qq.com</a>
         <button id="aboutCopy">复制邮箱</button>
       </div>
-      <p style="margin-top:7px;font-size:10.5px;color:#7b9cb0;">
+      <p id="abContactNote" style="margin-top:7px;font-size:10.5px;color:#7b9cb0;">
         反馈 bug、提建议、想加什么声音，都欢迎来信；邮件标题带上「拖拉机」我会更快看到。
       </p>
     </div>
 
     <div class="about-sec">
-      <h3>隐私与授权</h3>
-      <p>本软件不收集个人信息；仅在你打开 GPS 跟速时于本机读取速度，不上传不存储。当前状态：<b id="privState">未选择</b></p>
+      <h3 id="abPrivH">隐私与授权</h3>
+      <p id="abPrivP">本软件不收集个人信息；仅在你打开 GPS 跟速时于本机读取速度，不上传不存储。</p>
+      <p style="margin-top:3px;font-size:11.5px;color:#9dbcce;"><span id="abPrivStateL">当前状态：</span><b id="privState">未选择</b></p>
       <button id="privReopen" style="margin-top:6px;width:100%;padding:8px 0;border-radius:9px;font-size:11.5px;cursor:pointer;color:#8fd8ee;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.32);">查看《隐私政策》 / 重新授权</button>
     </div>
 
     <div class="about-btns">
       <button id="aboutDone">知道啦 · 突突去</button>
     </div>
-    <div class="about-copy">© 2026 手扶拖拉机声浪模拟器 · 保留所有权利</div>
+    <div class="about-copy" id="abCopy">© 2026 手扶拖拉机声浪模拟器 · 保留所有权利</div>
   </div>
 </div>
 
@@ -670,8 +706,8 @@
       只是它今天油耗有点高，缸垫还在漏风……你懂的 🛢️<br>
       （本次弹出纯属巧合，以后再也不会自动打扰，纯手动营业）
     </div>
-    <h2>给拖拉机加点柴油</h2>
-    <div class="tip-sub">免费玩的 · 突突得带劲就赏口油钱 · 不赏也照突</div>
+    <h2 id="tipTitle">给拖拉机加点柴油</h2>
+    <div class="tip-sub" id="tipSub">免费玩的 · 突突得带劲就赏口油钱 · 不赏也照突</div>
     <div class="tip-tabs">
       <button id="tabWx" class="on wx">微信支付</button>
       <button id="tabZfb" class="zfb">支付宝</button>
@@ -683,7 +719,7 @@
       <button id="tipSaveBtn">保存收款码</button>
       <button id="tipPaidBtn">我已打赏 🎖️</button>
     </div>
-    <div class="tip-note">
+    <div class="tip-note" id="tipNote">
       保存后：打开微信/支付宝 → 扫一扫 → 右上角「相册」选这张图<br>
       不打赏完全不影响使用，一分钱也是对拖拉机瘦瘦身材的认可
     </div>
@@ -695,8 +731,8 @@
 <!-- 首次启动：隐私政策提示与授权（合规必需，不可点遮罩跳过） -->
 <div id="privMask">
   <div class="priv-card">
-    <h2>隐私政策与授权提示</h2>
-    <div class="priv-hint">开始使用前，请阅读并同意《隐私政策》</div>
+    <h2 id="privTitle">隐私政策与授权提示</h2>
+    <div class="priv-hint" id="privHint">开始使用前，请阅读并同意《隐私政策》</div>
     <div class="priv-scroll" id="privScroll">
       <h3>声明主体</h3>
       <p>本软件「手扶拖拉机声浪模拟器」（包名 <b>com.jinlaoda.tractor</b>）由<b>个人开发者</b>独立开发并运营，
@@ -768,6 +804,319 @@ const ASSET_BASE = (location.protocol === 'file:') ? '' : 'assets/';
     img.src = ASSET_BASE + 'tractor.png';
   }
 })();
+
+/* ================= 多语言 ================= */
+const I18N = {
+  zh: {
+    appTitle: '手扶拖拉机声浪模拟器',
+    speed: '时速', rpm: '转速', gps: 'GPS跟速', throttle: '油门 THROTTLE',
+    statusIdle: '熄火 · 按住拖拉机摇车启动',
+    hint: '按住拖拉机摇车启动 · 运转时点一下熄火',
+    foot: '0~200 km/h · 请先调低音量',
+    about: '关于', tipBtn: '☕ 赏口油钱', gpsOffTag: '已关',
+    stCranking: '摇车中… 咔哒—嗤—咚', stCatching: '着火了！燃烧不稳…',
+    stRunning: '运转中 · 点一下熄火', stRunningGps: 'GPS 跟速运转中',
+    stFail: '启动失败！再来一次', stNoStart: '没摇着 · 按住别松手再试',
+    stStopping: '正在熄火…', stNoAudio: '当前环境不支持音频播放',
+    stGpsOn: 'GPS 跟速模式 · 速度驱动声浪', stGpsOff: '手动油门模式 · 拖动滑条加速',
+    stGpsUnsupported: '设备不支持定位', stGpsFail: 'GPS 信号失败 · 请检查定位授权',
+    hudThrottle: '油门 {n}%', hudGpsDrive: 'GPS 驱动',
+    abTitle: '关于这辆拖拉机', abSub: 'S195 单缸柴油机 · 纯前端离线声浪合成',
+    abIntroH: '项目简介',
+    abIntroP: '一个自娱自乐的小玩意儿：把 S195 单缸柴油机的“突突突”塞进手机，用 GPS 速度或油门滑条驱动转速，配上摇把启动、排气浓烟和机械咔哒。没有联网、没有账号、没有广告，也不消耗你的流量。',
+    abDiscH: '免责声明',
+    abDisc: [
+      '本软件是<b>声音模拟娱乐程序</b>，非真实车辆产品，与任何车辆厂商、品牌、型号无关联，也不具备任何驾驶辅助功能。',
+      '请在<b>停车、居家等安全环境</b>下使用。严禁于驾驶、骑行、步行上路或操作机械时使用，因此分心导致的任何后果由使用者自行承担。',
+      '请<b>先调低音量</b>再启动。长时间大音量（尤其戴耳机）可能造成听力损伤，请自行控制音量与时长。',
+      'GPS 仅用于在<b>本机</b>换算车速，位置数据不上传、不存储、不共享；本软件不收集任何个人信息，无网络请求。',
+      '打赏完全自愿，属对开发者的无偿鼓励，<b>不构成任何购买、订阅或服务承诺</b>；不打赏亦不影响全部功能。',
+      '音效素材来自公开素材库与自行录制处理，仅用于学习交流与娱乐；如涉版权问题请联系下方邮箱，将立即处理。',
+      '本软件按“现状”提供，不附带任何明示或默示担保。因使用或无法使用本软件产生的直接或间接损失，开发者不承担责任。'
+    ],
+    abContactH: '开发者联系方式', aboutCopy: '复制邮箱',
+    abContactNote: '反馈 bug、提建议、想加什么声音，都欢迎来信；邮件标题带上「拖拉机」我会更快看到。',
+    abPrivH: '隐私与授权',
+    abPrivP: '本软件不收集个人信息；仅在你打开 GPS 跟速时于本机读取速度，不上传不存储。',
+    abPrivStateL: '当前状态：', abPrivBtn: '查看《隐私政策》 / 重新授权',
+    aboutDone: '知道啦 · 突突去',
+    abCopy: '© 2026 手扶拖拉机声浪模拟器 · 保留所有权利',
+    privNone: '未选择', privManual: '仅手动模式（已拒绝定位）', privAgreed: '已同意隐私政策',
+    tipFree: '先说清楚：这拖拉机<b>免费骑到天荒地老</b>，一分不掏也照样突突！<br>只是它今天油耗有点高，缸垫还在漏风……你懂的 🛢️<br>（本次弹出纯属巧合，以后再也不会自动打扰，纯手动营业）',
+    tipTitle: '给拖拉机加点柴油',
+    tipSub: '免费玩的 · 突突得带劲就赏口油钱 · 不赏也照突',
+    tabWx: '微信支付', tabZfb: '支付宝',
+    tipSave: '保存收款码', tipPaid: '我已打赏 🎖️',
+    tipNote: '保存后：打开微信/支付宝 → 扫一扫 → 右上角「相册」选这张图<br>不打赏完全不影响使用，一分钱也是对拖拉机瘦瘦身材的认可',
+    amts: [
+      { label: '¥1<b>一升柴油</b>', quip: '够拖拉机打个哈欠。它会突突两声表示感谢——就两声，很傲娇。' },
+      { label: '¥3<b>半根火腿肠</b>', quip: '拖拉机不吃这个，但开拖拉机的这位师傅吃，并表示很感动。' },
+      { label: '¥5<b>一桶机油</b>', quip: '喝完这桶，爬坡不喘、拉砖不抖，排出的烟都自带香味（并不会）。' },
+      { label: '<b>领导随意</b>', quip: '金额自己填：一分是缘分，五毛是友情，一块以上就是过命的交情。' }
+    ],
+    toastSaved: '已存进相册「手扶拖拉机」文件夹 ✅\n打开微信/支付宝 → 扫一扫 → 右上角「相册」选它',
+    toastSaveFail: '保存失败：{e}\n长按上方二维码图片也能保存/识别',
+    toastLongPress: '长按上方二维码图片 →「保存图片」或「识别二维码」\n然后去微信/支付宝扫它',
+    toastGold: '🎖️ 恭喜解锁【镀金尊享版】！\n拖拉机连夜给自己喷了金粉，快去看它的烟！',
+    toastCopied: '邮箱已复制：{m}\n欢迎来信聊拖拉机、提需求、或者单纯夸它两声',
+    toastCopyFail: '复制没成功，手动记一下：{m}',
+    toastPrivManual: '已选择仅手动模式 · 全部功能可用，不会开启定位',
+    toastPrivAgree: '已同意隐私政策 · 定位仅在开启 GPS 跟速时使用',
+    toastGpsLocked: '你选择了「仅手动模式」，不会调用定位。想用 GPS 跟速：点「关于」→「查看隐私政策 / 重新授权」',
+    docGold: '👑 手扶拖拉机声浪模拟器（金主尊享版）',
+    privTitle: '隐私政策与授权提示',
+    privHint: '开始使用前，请阅读并同意《隐私政策》',
+    privAgree: '同意并继续', privManualBtn: '仅手动模式',
+    privSections: [
+      { h: '声明主体', p: '本软件「手扶拖拉机声浪模拟器」（包名 <b>com.jinlaoda.tractor</b>）由<b>个人开发者</b>独立开发并运营，是本政策的唯一责任主体。本政策独立成文，独立于任何其他协议或声明，与软件实际功能、权限调用一一对应。联系方式：<b>16386618@qq.com</b>。' },
+      { h: '一、我们不收集个人信息', p: '本软件<b>没有账号体系</b>，不需要注册或登录，不索取手机号、姓名、身份证、通讯录、短信、相册、相机、麦克风等任何信息；也未接入任何统计、广告、推送类第三方 SDK，不做任何数据上传。' },
+      { h: '二、定位权限（唯一敏感权限）', p: '仅当你主动打开「GPS 跟速」时，本软件调用系统定位获取实时速度，用于<b>在本机换算发动机转速与声浪</b>。速度数据<b>不上传、不存储、不共享、不用于画像或广告</b>。拒绝授权或关闭该开关后，用油门滑条即可完整使用全部功能。' },
+      { h: '三、权限与网络说明', p: '<b>精确定位 / 模糊定位</b>：同上，仅 GPS 跟速模式使用。<br><b>网络权限</b>：仅用于本机内部加载界面素材（127.0.0.1 本地回环），<b>不连接任何外部服务器</b>。<br>不申请存储、相机、麦克风、通讯录等权限。' },
+      { h: '四、本地数据与保存期限', p: '仅在本机保存功能性偏好（着车次数、提示是否已展示、彩蛋状态、本次授权选择），<b>不涉及个人信息</b>，随清除应用数据或卸载即刻删除，开发者无法读取。' },
+      { h: '五、账号与注销', p: '本软件<b>无注册登录、无账号体系</b>，因此不存在账号注销流程。如需删除全部本地数据或撤回授权：在系统设置中清除本应用数据 / 卸载应用，或在「系统设置 → 应用 → 权限」中关闭定位。亦可发邮件至 <b>16386618@qq.com</b> 提出删除请求，我们将在 15 个工作日内处理并回复。' },
+      { h: '六、个性化推荐与广告', p: '本软件<b>不提供个性化推荐、不做用户画像、不投放任何广告、不进行定向推送</b>。' },
+      { h: '七、未成年人保护', p: '本软件为声音模拟娱乐工具，<b>不面向儿童设计，不收集儿童个人信息</b>。若使用者为不满 14 周岁的儿童，请在监护人陪同、同意并指导下使用，并注意控制音量与时长。监护人如发现儿童在未经同意的情况下使用，可联系我们协助删除相关本地数据。' },
+      { h: '八、你的权利', p: '你有权查阅、更正、删除个人信息，撤回授权，或注销（本软件无账号，对应为清除本地数据）。对本政策有疑问、意见或投诉，可通过上述邮箱联系，我们将在 15 个工作日内回复。' },
+      { h: '九、政策更新', p: '功能或权限发生变化时，本政策将同步更新并在应用内与本页面公布，注明更新日期；重大变更将再次征得你的同意。' }
+    ]
+  },
+
+  en: {
+    appTitle: 'Walking Tractor Sound Sim',
+    speed: 'SPEED', rpm: 'RPM', gps: 'GPS SPEED', throttle: 'THROTTLE',
+    statusIdle: 'Off · hold to crank',
+    hint: 'Hold the tractor to crank · tap once to shut down',
+    foot: '0~200 km/h · Turn the volume down first',
+    about: 'About', tipBtn: '☕ Buy diesel', gpsOffTag: 'off',
+    stCranking: 'Cranking… click–hiss–thump', stCatching: 'It caught! Running rough…',
+    stRunning: 'Running · tap to stop', stRunningGps: 'Running · GPS speed',
+    stFail: 'Start failed! Try again', stNoStart: "Didn't catch · hold it longer",
+    stStopping: 'Shutting down…', stNoAudio: 'Audio is not supported here',
+    stGpsOn: 'GPS speed mode · sound follows your speed', stGpsOff: 'Manual throttle · drag the slider',
+    stGpsUnsupported: 'Location not supported on this device', stGpsFail: 'GPS failed · check location permission',
+    hudThrottle: 'Throttle {n}%', hudGpsDrive: 'GPS drive',
+    abTitle: 'About this tractor', abSub: 'S195 single-cylinder diesel · offline Web Audio synthesis',
+    abIntroH: 'What this is',
+    abIntroP: 'A little toy made for the fun of it: it stuffs the putt-putt of an S195 single-cylinder diesel into your phone, drives the rpm from GPS speed or the throttle slider, and adds a hand crank, exhaust smoke and a mechanical clack. No network, no account, no ads, no data usage.',
+    abDiscH: 'Disclaimer',
+    abDisc: [
+      'This software is an <b>audio simulation / entertainment program</b>. It is not a real vehicle product, is not affiliated with any vehicle maker, brand or model, and offers no driving assistance of any kind.',
+      'Use it only in <b>safe places such as a parked car or at home</b>. Never use it while driving, cycling, walking on the road or operating machinery — any consequence of distraction is borne by the user.',
+      'Please <b>lower the volume first</b>. Long, loud playback (especially with earphones) may damage your hearing; manage volume and duration yourself.',
+      'GPS is used only to convert speed <b>on this device</b>. Location data is never uploaded, stored or shared; this app collects no personal information and makes no network requests.',
+      'Tips are entirely voluntary, a no-strings gesture of support; they <b>are not a purchase, subscription or service commitment</b>. Every feature works without tipping.',
+      'Audio samples come from public libraries and our own recordings, used only for learning, sharing and entertainment. For any copyright concern, email us and we will act immediately.',
+      'Provided "as is", without express or implied warranty. The developer is not liable for any direct or indirect loss from using, or being unable to use, this software.'
+    ],
+    abContactH: 'Contact the developer', aboutCopy: 'Copy email',
+    abContactNote: 'Bug reports, ideas, requests for new sounds — all welcome. Put “tractor” in the subject and I will see it sooner.',
+    abPrivH: 'Privacy & permission',
+    abPrivP: 'This app collects no personal information. Speed is read on-device only while GPS speed mode is on, never uploaded or stored.',
+    abPrivStateL: 'Status: ', abPrivBtn: 'View Privacy Policy / re-authorize',
+    aboutDone: 'Got it · let it putt',
+    abCopy: '© 2026 Walking Tractor Sound Sim · All rights reserved',
+    privNone: 'Not chosen', privManual: 'Manual only (location denied)', privAgreed: 'Privacy policy accepted',
+    tipFree: "Let's be clear: this tractor is <b>free to ride forever</b> — not a cent needed, it still putt-putts!<br>It's just that fuel consumption is high today and the head gasket still leaks… you know how it is 🛢️<br>(This pop-up is pure coincidence — no more auto-nagging, manual service only)",
+    tipTitle: 'Top up the diesel',
+    tipSub: 'Free to play · tip if it putt-putts well · works fine without',
+    tabWx: 'WeChat Pay', tabZfb: 'Alipay',
+    tipSave: 'Save QR code', tipPaid: 'I tipped 🎖️',
+    tipNote: 'After saving: open WeChat/Alipay → Scan → top-right “Album” → pick this image<br>Tipping is optional — even a cent counts as respect for this skinny tractor',
+    amts: [
+      { label: '¥1<b>A litre of diesel</b>', quip: 'Enough for the tractor to yawn. It will putt twice in thanks — just twice, it is a proud one.' },
+      { label: '¥3<b>Half a sausage</b>', quip: 'The tractor will not eat it, but whoever drives it will, and is deeply moved.' },
+      { label: '¥5<b>A can of engine oil</b>', quip: 'Drink this and it climbs hills without panting, hauls bricks without shaking, and its smoke smells faintly fine (it does not).' },
+      { label: "<b>Boss's call</b>", quip: 'Name your price: one cent is fate, five mao is friendship, one yuan and up is a bond for life.' }
+    ],
+    toastSaved: 'Saved to album “Walking Tractor” ✅\nOpen WeChat/Alipay → Scan → top-right “Album” → pick it',
+    toastSaveFail: 'Save failed: {e}\nYou can also long-press the QR image above to save or scan it',
+    toastLongPress: 'Long-press the QR image above → “Save image” or “Scan QR”\nThen scan it in WeChat/Alipay',
+    toastGold: '🎖️ Unlocked: the Gilded Edition!\nThe tractor spray-painted itself gold overnight — go look at its smoke!',
+    toastCopied: 'Email copied: {m}\nWrite in to talk tractors, request features, or just praise it',
+    toastCopyFail: 'Copy failed — jot it down: {m}',
+    toastPrivManual: 'Manual mode selected · all features available, location stays off',
+    toastPrivAgree: 'Privacy policy accepted · location is used only in GPS speed mode',
+    toastGpsLocked: 'You chose “Manual only”, so location is not used. For GPS speed mode: About → View Privacy Policy / re-authorize',
+    docGold: '👑 Walking Tractor Sound Sim (Patron Edition)',
+    privTitle: 'Privacy policy & permission',
+    privHint: 'Please read and accept the Privacy Policy before you start',
+    privAgree: 'Accept & continue', privManualBtn: 'Manual only',
+    privSections: [
+      { h: 'Who is responsible', p: 'This app, “Walking Tractor Sound Sim” (<b>com.jinlaoda.tractor</b>), is developed and operated solely by an <b>individual developer</b>, who is the sole controller under this policy. This policy stands alone, independent of any other agreement or notice, and matches the app\'s actual features and permission calls one to one. Contact: <b>16386618@qq.com</b>.' },
+      { h: '1. We collect no personal data', p: 'There is <b>no account system</b>: no sign-up or login, and we never ask for phone number, name, ID, contacts, SMS, photos, camera or microphone. No analytics, ad or push SDK is integrated, and nothing is uploaded.' },
+      { h: '2. Location (the only sensitive permission)', p: 'Only when you turn on <b>GPS speed mode</b> does the app read real-time speed from the system, purely to <b>convert engine rpm and sound on this device</b>. Speed data is <b>never uploaded, stored, shared, profiled or used for ads</b>. If you decline or switch it off, the throttle slider gives you every feature.' },
+      { h: '3. Permissions & network', p: '<b>Fine / coarse location</b>: as above, GPS speed mode only.<br><b>Network</b>: used only to load interface assets from the device itself (127.0.0.1 loopback); <b>no external server is contacted</b>.<br>No storage, camera, microphone or contacts permissions are requested.' },
+      { h: '4. Local data & retention', p: 'Only functional preferences are stored on-device (start count, whether a prompt was shown, easter-egg state, your choice here). <b>No personal information is involved</b>; clearing app data or uninstalling removes them instantly, and the developer cannot read them.' },
+      { h: '5. Accounts & deletion', p: 'The app has <b>no registration, login or account system</b>, so there is no account-deletion flow. To erase all local data or withdraw consent: clear this app\'s data in system settings, uninstall the app, or turn off location under Settings → Apps → Permissions. You may also email <b>16386618@qq.com</b> with a deletion request; we respond within 15 working days.' },
+      { h: '6. Personalization & ads', p: 'The app provides <b>no personalized recommendations, no user profiling, no advertising and no targeted push</b>.' },
+      { h: '7. Minors', p: 'This is a sound-simulation toy, <b>not designed for children, and it collects no children\'s personal data</b>. Users under 14 should use it with a guardian present, consenting and guiding. Guardians who find a child used it without consent may contact us to have local data removed.' },
+      { h: '8. Your rights', p: 'You may access, correct or delete personal data, withdraw consent, or close an account (this app has none — clearing local data is the equivalent). Questions, comments or complaints: email us above; we reply within 15 working days.' },
+      { h: '9. Policy updates', p: 'This policy is updated whenever features or permissions change, published here and in-app with a new date; material changes will ask for your consent again.' }
+    ]
+  },
+
+  ko: {
+    appTitle: '경운기 엔진 사운드 시뮬레이터',
+    speed: '속도', rpm: '회전수', gps: 'GPS 연동', throttle: '스로틀',
+    statusIdle: '시동 꺼짐 · 트랙터를 길게 눌러 시동',
+    hint: '트랙터를 길게 눌러 시동 · 작동 중 한 번 누르면 정지',
+    foot: '0~200 km/h · 먼저 볼륨을 낮춰 주세요',
+    about: '정보', tipBtn: '☕ 경유값 후원', gpsOffTag: '꺼짐',
+    stCranking: '크랭킹 중… 딸깍—쉬—툭', stCatching: '점화! 연소가 불안정…',
+    stRunning: '작동 중 · 한 번 누르면 정지', stRunningGps: 'GPS 연동으로 작동 중',
+    stFail: '시동 실패! 다시 시도', stNoStart: '시동 안 걸림 · 더 길게 눌러 주세요',
+    stStopping: '정지 중…', stNoAudio: '이 환경에서는 오디오를 재생할 수 없습니다',
+    stGpsOn: 'GPS 연동 모드 · 속도에 따라 사운드 변화', stGpsOff: '수동 스로틀 · 슬라이더를 드래그',
+    stGpsUnsupported: '이 기기는 위치 정보를 지원하지 않습니다', stGpsFail: 'GPS 신호 실패 · 위치 권한을 확인하세요',
+    hudThrottle: '스로틀 {n}%', hudGpsDrive: 'GPS 구동',
+    abTitle: '이 트랙터 소개', abSub: 'S195 단기통 디젤 · 오프라인 웹 오디오 합성',
+    abIntroH: '프로젝트 소개',
+    abIntroP: '그냥 재미로 만든 작은 장난감입니다. S195 단기통 디젤의 “푸드득푸드득” 소리를 휴대폰에 담고, GPS 속도나 스로틀 슬라이더로 회전수를 조절하며, 크랭크 시동·배기 연기·기계식 딸깍 소리를 더했습니다. 네트워크도 계정도 광고도 없고 데이터도 쓰지 않습니다.',
+    abDiscH: '면책 고지',
+    abDisc: [
+      '이 앱은 <b>사운드 시뮬레이션 오락 프로그램</b>이며 실제 차량 제품이 아닙니다. 어떤 차량 제조사·브랜드·모델과도 무관하고 주행 보조 기능이 전혀 없습니다.',
+      '<b>주차 중이거나 집 등 안전한 환경</b>에서만 사용하세요. 운전·자전거·도로 보행·기계 조작 중 사용은 금지되며, 주의 분산으로 인한 모든 결과는 사용자 책임입니다.',
+      '시동 전에 <b>볼륨을 먼저 낮춰</b> 주세요. 큰 소리로 오래 듣으면(특히 이어폰) 청력이 손상될 수 있으니 볼륨과 시간을 직접 조절하세요.',
+      'GPS는 <b>이 기기에서</b> 속도를 환산하는 데만 쓰입니다. 위치 데이터는 업로드·저장·공유되지 않으며, 이 앱은 개인정보를 수집하지 않고 네트워크 요청도 하지 않습니다.',
+      '후원은 전적으로 자발적이며 개발자에 대한 무상 격려입니다. <b>구매·구독·서비스 약속이 아니며</b>, 후원하지 않아도 모든 기능을 쓸 수 있습니다.',
+      '효과음은 공개 음원 사이트와 직접 녹음한 자료를 가공한 것으로 학습·교류·오락 목적으로만 사용됩니다. 저작권 문제가 있으면 아래 메일로 알려 주시면 즉시 처리합니다.',
+      '이 앱은 “있는 그대로” 제공되며 명시적·묵시적 보증을 하지 않습니다. 사용 또는 사용 불능으로 인한 직간접 손해에 대해 개발자는 책임지지 않습니다.'
+    ],
+    abContactH: '개발자 연락처', aboutCopy: '이메일 복사',
+    abContactNote: '버그 신고, 제안, 추가하고 싶은 소리 모두 환영합니다. 제목에 「트랙터」를 넣어 주시면 더 빨리 봅니다.',
+    abPrivH: '개인정보 및 권한',
+    abPrivP: '이 앱은 개인정보를 수집하지 않습니다. GPS 연동을 켰을 때만 기기에서 속도를 읽고, 업로드하거나 저장하지 않습니다.',
+    abPrivStateL: '현재 상태: ', abPrivBtn: '개인정보 처리방침 보기 / 재승인',
+    aboutDone: '알겠어요 · 출발',
+    abCopy: '© 2026 경운기 엔진 사운드 시뮬레이터 · 모든 권리 보유',
+    privNone: '선택 안 함', privManual: '수동 모드만 (위치 거부)', privAgreed: '개인정보 처리방침 동의함',
+    tipFree: '먼저 분명히 말씀드리면, 이 트랙터는 <b>평생 무료</b>입니다. 한 푼 안 내도 그대로 푸드득거립니다!<br>다만 오늘 연비가 좀 나쁘고 헤드 개스킷에서 아직 바람이 새서… 아시죠 🛢️<br>(이번 팝업은 우연입니다. 앞으로 자동으로 뜨지 않고 수동 운영만 합니다)',
+    tipTitle: '경유 좀 넣어 주기',
+    tipSub: '무료 플레이 · 신나면 경유값 후원 · 안 해도 그대로',
+    tabWx: '위챗페이', tabZfb: '알리페이',
+    tipSave: 'QR 저장', tipPaid: '후원했어요 🎖️',
+    tipNote: '저장 후: 위챗/알리페이 → 스캔 → 오른쪽 위 「앨범」에서 이 이미지 선택<br>후원은 사용에 전혀 영향이 없습니다. 1원도 이 마른 트랙터에 대한 인정입니다',
+    amts: [
+      { label: '¥1<b>경유 1리터</b>', quip: '트랙터가 하품 한 번 할 정도. 고맙다고 두 번 푸드득거립니다. 딱 두 번, 꽤 도도하죠.' },
+      { label: '¥3<b>소시지 반 개</b>', quip: '트랙터는 이걸 안 먹지만, 모는 기사님이 먹고 감동합니다.' },
+      { label: '¥5<b>엔진오일 한 통</b>', quip: '이걸 마시면 오르막도 안 헐떡이고 벽돌도 안 떨리고, 연기에서 향기가 난다는데 (안 납니다).' },
+      { label: '<b>사장님 마음대로</b>', quip: '금액 직접 입력: 1전은 인연, 5마오는 우정, 1위안부터는 생사지교.' }
+    ],
+    toastSaved: '앨범 「경운기」 폴더에 저장됨 ✅\n위챗/알리페이 → 스캔 → 오른쪽 위 「앨범」에서 선택',
+    toastSaveFail: '저장 실패: {e}\n위 QR 이미지를 길게 눌러 저장하거나 인식할 수도 있습니다',
+    toastLongPress: '위 QR 이미지를 길게 눌러 「이미지 저장」 또는 「QR 인식」\n그다음 위챗/알리페이로 스캔하세요',
+    toastGold: '🎖️ [황금 에디션] 해금!\n트랙터가 밤새 금가루를 칠했습니다. 연기를 보러 가세요!',
+    toastCopied: '이메일 복사됨: {m}\n트랙터 이야기, 요청, 칭찬 모두 환영합니다',
+    toastCopyFail: '복사 실패, 직접 적어 주세요: {m}',
+    toastPrivManual: '수동 모드 선택 · 모든 기능 사용 가능, 위치는 켜지지 않습니다',
+    toastPrivAgree: '개인정보 처리방침 동의 · 위치는 GPS 연동 시에만 사용',
+    toastGpsLocked: '「수동 모드만」을 선택해 위치를 쓰지 않습니다. GPS 연동을 쓰려면 정보 → 개인정보 처리방침 보기 / 재승인',
+    docGold: '👑 경운기 엔진 사운드 시뮬레이터 (후원자 에디션)',
+    privTitle: '개인정보 처리방침 및 권한 안내',
+    privHint: '시작하기 전에 개인정보 처리방침을 읽고 동의해 주세요',
+    privAgree: '동의하고 계속', privManualBtn: '수동 모드만',
+    privSections: [
+      { h: '책임 주체', p: '본 앱 「경운기 엔진 사운드 시뮬레이터」(패키지 <b>com.jinlaoda.tractor</b>)는 <b>개인 개발자</b>가 단독으로 개발·운영하며, 해당 개발자가 본 방침의 유일한 책임 주체입니다. 본 방침은 다른 약관과 무관하게 독립적으로 작성되었고, 앱의 실제 기능·권한 호출과 일대일로 대응합니다. 연락처: <b>16386618@qq.com</b>.' },
+      { h: '1. 개인정보를 수집하지 않습니다', p: '본 앱은 <b>계정 체계가 없습니다</b>. 회원가입·로그인이 필요 없고 휴대폰번호, 이름, 신분증, 연락처, 문자, 앨범, 카메라, 마이크 등 어떤 정보도 요구하지 않습니다. 통계·광고·푸시 SDK도 연동하지 않으며 어떤 데이터도 업로드하지 않습니다.' },
+      { h: '2. 위치 권한(유일한 민감 권한)', p: '직접 「GPS 연동」을 켰을 때만 시스템 위치로 실시간 속도를 읽어 <b>기기 안에서 엔진 회전수와 사운드를 환산</b>하는 데 사용합니다. 속도 데이터는 <b>업로드·저장·공유하지 않고 프로파일링이나 광고에 쓰지 않습니다</b>. 권한을 거부하거나 끄면 스로틀 슬라이더로 모든 기능을 쓸 수 있습니다.' },
+      { h: '3. 권한 및 네트워크', p: '<b>정확/대략 위치</b>: 위와 동일, GPS 연동 모드에서만 사용.<br><b>네트워크</b>: 기기 내부에서 화면 소재를 불러오는 데만 사용(127.0.0.1 루프백)하며 <b>외부 서버에 접속하지 않습니다</b>.<br>저장소·카메라·마이크·연락처 권한은 요청하지 않습니다.' },
+      { h: '4. 로컬 데이터와 보존 기간', p: '기능성 설정(시동 횟수, 안내 표시 여부, 이스터에그 상태, 이번 동의 선택)만 기기에 저장하며 <b>개인정보가 포함되지 않습니다</b>. 앱 데이터 삭제 또는 삭제(언인스톨) 시 즉시 사라지고 개발자는 열람할 수 없습니다.' },
+      { h: '5. 계정과 탈퇴', p: '본 앱은 <b>가입·로그인·계정 체계가 없어</b> 계정 탈퇴 절차도 없습니다. 모든 로컬 데이터 삭제나 동의 철회는 시스템 설정에서 앱 데이터 삭제 / 앱 삭제, 또는 「설정 → 앱 → 권한」에서 위치 끄기로 가능합니다. <b>16386618@qq.com</b>으로 삭제를 요청하셔도 되며 15영업일 내 처리·회신합니다.' },
+      { h: '6. 개인화 추천과 광고', p: '본 앱은 <b>개인화 추천, 사용자 프로파일링, 광고, 타깃 푸시를 일절 제공하지 않습니다</b>.' },
+      { h: '7. 미성년자 보호', p: '본 앱은 사운드 시뮬레이션 오락 도구로 <b>아동을 대상으로 하지 않으며 아동 개인정보를 수집하지 않습니다</b>. 만 14세 미만은 보호자와 함께, 보호자의 동의와 지도 아래 사용하고 볼륨과 사용 시간을 조절하세요. 보호자는 동의 없이 사용한 사실을 알게 되면 연락해 로컬 데이터 삭제를 요청할 수 있습니다.' },
+      { h: '8. 이용자의 권리', p: '개인정보 열람·정정·삭제, 동의 철회, 탈퇴(계정이 없으므로 로컬 데이터 삭제) 권리가 있습니다. 본 방침에 대한 문의·의견·불만은 위 메일로 보내 주시면 15영업일 내 회신합니다.' },
+      { h: '9. 방침의 변경', p: '기능이나 권한이 바뀌면 본 방침을 함께 갱신해 앱 내와 본 화면에 게시하고 갱신일을 표시합니다. 중대한 변경은 다시 동의를 받습니다.' }
+    ]
+  },
+
+  ja: {
+    appTitle: '耕耘機サウンドシミュレーター',
+    speed: '速度', rpm: '回転数', gps: 'GPS連動', throttle: 'スロットル',
+    statusIdle: 'エンジン停止 · トラクターを長押しで始動',
+    hint: 'トラクターを長押しでクランク · 稼働中にタップで停止',
+    foot: '0~200 km/h · 先に音量を下げてください',
+    about: '情報', tipBtn: '☕ 軽油代を奢る', gpsOffTag: 'オフ',
+    stCranking: 'クランク中… カチッ—シュー—ドン', stCatching: '着火！燃焼が不安定…',
+    stRunning: '稼働中 · タップで停止', stRunningGps: 'GPS連動で稼働中',
+    stFail: '始動失敗！もう一度', stNoStart: 'かからず · もう少し長押し',
+    stStopping: '停止中…', stNoAudio: 'この環境では音声を再生できません',
+    stGpsOn: 'GPS連動モード · 速度でサウンドが変化', stGpsOff: '手動スロットル · スライダーをドラッグ',
+    stGpsUnsupported: 'この端末は位置情報に対応していません', stGpsFail: 'GPS信号エラー · 位置情報の許可を確認',
+    hudThrottle: 'スロットル {n}%', hudGpsDrive: 'GPS 駆動',
+    abTitle: 'このトラクターについて', abSub: 'S195 単気筒ディーゼル · オフラインWeb Audio合成',
+    abIntroH: 'プロジェクト概要',
+    abIntroP: '遊びで作った小さなおもちゃです。S195 単気筒ディーゼルの「ポポポ」という音をスマホに詰め込み、GPS の速度やスロットルスライダーで回転数を動かし、クランク始動・排気煙・機械的なカチッ音を添えました。通信もアカウントも広告もなく、データ通信も消費しません。',
+    abDiscH: '免責事項',
+    abDisc: [
+      '本アプリは<b>サウンドシミュレーションの娯楽プログラム</b>であり、実車製品ではありません。いかなる車両メーカー・ブランド・型式とも無関係で、運転支援機能も一切ありません。',
+      '<b>停車中や自宅など安全な環境</b>でご使用ください。運転中・自転車・路上歩行中・機械操作中の使用は禁止です。注意散漫による結果は利用者の責任となります。',
+      '始動前に<b>音量を下げて</b>ください。大音量で長時間（特にイヤホン）聴くと聴力障害のおそれがあります。音量と時間はご自身で管理してください。',
+      'GPS は<b>本機内</b>で速度を換算するためだけに使います。位置データは送信・保存・共有せず、本アプリは個人情報を収集せず、ネットワーク要求も行いません。',
+      '投げ銭は完全に任意で、開発者への無償の励ましです。<b>購入・サブスク・サービス提供の約束ではありません</b>。投げ銭なしでも全機能を利用できます。',
+      '効果音は公開素材サイトと自作録音を加工したもので、学習・交流・娯楽の目的にのみ使用しています。著作権上の問題があれば下記メールへご連絡ください。直ちに対応します。',
+      '本アプリは「現状のまま」提供され、明示・黙示の保証を伴いません。使用または使用不能により生じた直接・間接の損害について開発者は責任を負いません。'
+    ],
+    abContactH: '開発者連絡先', aboutCopy: 'メールをコピー',
+    abContactNote: '不具合報告・提案・追加してほしい音、どれも歓迎です。件名に「トラクター」と入れてくださると早く気づきます。',
+    abPrivH: 'プライバシーと権限',
+    abPrivP: '本アプリは個人情報を収集しません。GPS連動をオンにしたときだけ端末内で速度を読み取り、送信も保存もしません。',
+    abPrivStateL: '現在の状態: ', abPrivBtn: 'プライバシーポリシーを見る / 再許可',
+    aboutDone: '了解 · 走るぞ',
+    abCopy: '© 2026 耕耘機エンジンサウンドシミュレーター · All rights reserved',
+    privNone: '未選択', privManual: '手動モードのみ（位置情報を拒否）', privAgreed: 'プライバシーポリシーに同意済み',
+    tipFree: '先に言っておきます。このトラクターは<b>一生無料</b>。一円も出さなくてもポポポと走ります！<br>ただ今日は燃費が悪く、ヘッドガスケットからまだ風が漏れていて……お察しください 🛢️<br>（今回のポップアップは偶然です。今後は自動で出ません。手動営業のみ）',
+    tipTitle: '軽油を足す',
+    tipSub: '無料で遊べます · 気持ちよければ軽油代を · 払わなくても動きます',
+    tabWx: 'WeChatペイ', tabZfb: 'アリペイ',
+    tipSave: 'QRを保存', tipPaid: '投げ銭した 🎖️',
+    tipNote: '保存後：WeChat/アリペイ → スキャン → 右上「アルバム」からこの画像を選択<br>投げ銭は利用に一切影響しません。1円でもこの細いトラクターへの敬意です',
+    amts: [
+      { label: '¥1<b>軽油1リットル</b>', quip: 'トラクターがあくび一回分。お礼に二回ポポポと鳴きます。二回だけ、けっこうツンデレ。' },
+      { label: '¥3<b>ソーセージ半分</b>', quip: 'トラクターは食べませんが、運転している職人さんが食べて感激しています。' },
+      { label: '¥5<b>エンジンオイル一缶</b>', quip: 'これを飲めば坂も息切れせず、レンガも揺れず、排気に香りまで（しません）。' },
+      { label: '<b>お代はご随意に</b>', quip: '金額はご自身で：1円は縁、5角は友情、1元以上は生死を共にする仲。' }
+    ],
+    toastSaved: 'アルバム「耕耘機」に保存しました ✅\nWeChat/アリペイ → スキャン → 右上「アルバム」から選択',
+    toastSaveFail: '保存に失敗：{e}\n上のQR画像を長押しして保存・読み取りもできます',
+    toastLongPress: '上のQR画像を長押し → 「画像を保存」または「QRコードを読み取る」\nそのあとWeChat/アリペイでスキャン',
+    toastGold: '🎖️ 【黄金エディション】解放！\nトラクターが夜通し金粉を吹きました。煙を見に行こう！',
+    toastCopied: 'メールアドレスをコピー：{m}\nトラクター談義・要望・褒め言葉、どれでも歓迎',
+    toastCopyFail: 'コピー失敗。手で控えてください：{m}',
+    toastPrivManual: '手動モードを選択 · 全機能利用可、位置情報はオフのまま',
+    toastPrivAgree: 'プライバシーポリシーに同意 · 位置情報はGPS連動時のみ使用',
+    toastGpsLocked: '「手動モードのみ」を選んだため位置情報は使いません。GPS連動を使うには 情報 → プライバシーポリシー / 再許可',
+    docGold: '👑 耕耘機エンジンサウンドシミュレーター（支援者エディション）',
+    privTitle: 'プライバシーポリシーと権限のお知らせ',
+    privHint: 'ご利用前にプライバシーポリシーをお読みいただき同意してください',
+    privAgree: '同意して続ける', privManualBtn: '手動モードのみ',
+    privSections: [
+      { h: '責任主体', p: '本アプリ「耕耘機エンジンサウンドシミュレーター」(パッケージ <b>com.jinlaoda.tractor</b>) は<b>個人開発者</b>が単独で開発・運営しており、同開発者が本ポリシーの唯一の責任主体です。本ポリシーは他の規約から独立した単独文書であり、アプリの実際の機能・権限呼び出しと一対一で対応しています。連絡先：<b>16386618@qq.com</b>。' },
+      { h: '1. 個人情報を収集しません', p: '本アプリには<b>アカウント体系がありません</b>。登録・ログインは不要で、電話番号・氏名・身分証・連絡先・SMS・アルバム・カメラ・マイクなどの情報を一切求めません。統計・広告・プッシュ系SDKも導入しておらず、データ送信も行いません。' },
+      { h: '2. 位置情報権限（唯一の機微権限）', p: 'ご自身で「GPS連動」をオンにしたときのみ、システムの位置情報からリアルタイム速度を取得し、<b>本機内でエンジン回転数とサウンドに換算</b>するために使います。速度データは<b>送信・保存・共有せず、プロファイリングや広告にも使いません</b>。許可しない、またはスイッチを切っても、スロットルスライダーで全機能を利用できます。' },
+      { h: '3. 権限とネットワーク', p: '<b>正確／おおよその位置情報</b>：上記のとおり GPS連動モードのみ。<br><b>ネットワーク</b>：本機内で画面素材を読み込むためだけに使用（127.0.0.1 ループバック）し、<b>外部サーバーには接続しません</b>。<br>ストレージ・カメラ・マイク・連絡先の権限は要求しません。' },
+      { h: '4. ローカルデータと保存期間', p: '機能的な設定（始動回数、案内表示の有無、イースターエッグの状態、今回の同意選択）のみを本機に保存し、<b>個人情報は含みません</b>。アプリデータの消去やアンインストールで直ちに削除され、開発者は閲覧できません。' },
+      { h: '5. アカウントと削除', p: '本アプリは<b>登録・ログイン・アカウント体系がない</b>ため、アカウント削除の手続きはありません。全ローカルデータの削除や同意の撤回は、システム設定でアプリデータを消去／アプリを削除、または「設定 → アプリ → 権限」で位置情報をオフにすることで可能です。<b>16386618@qq.com</b> への削除依頼も受け付け、15営業日以内に対応・返信します。' },
+      { h: '6. パーソナライズと広告', p: '本アプリは<b>パーソナライズ推薦、ユーザープロファイリング、広告配信、ターゲティング配信を一切行いません</b>。' },
+      { h: '7. 未成年者の保護', p: '本アプリはサウンドシミュレーションの娯楽ツールであり、<b>子ども向けに設計されておらず、子どもの個人情報を収集しません</b>。14歳未満の方は保護者と一緒に、保護者の同意と指導のもとで使用し、音量と利用時間に注意してください。保護者は同意なく使用されたことを知った場合、ご連絡いただければローカルデータの削除に協力します。' },
+      { h: '8. あなたの権利', p: '個人情報の閲覧・訂正・削除、同意の撤回、退会（本アプリにアカウントはないためローカルデータ削除に相当）の権利があります。本ポリシーへのご質問・ご意見・苦情は上記メールへ。15営業日以内に返信します。' },
+      { h: '9. ポリシーの更新', p: '機能や権限が変わった場合、本ポリシーを更新してアプリ内と本画面に掲載し、更新日を明記します。重要な変更の際は改めて同意を求めます。' }
+    ]
+  }
+};
+
+const LANGS = ['zh', 'en', 'ko', 'ja'];
+const LANG_LABEL = { zh: '中文', en: 'EN', ko: '한국어', ja: '日本語' };
+let LANG = 'zh';
+
+function t(key) {
+  const pack = I18N[LANG] || I18N.zh;
+  const v = pack[key];
+  return (v === undefined || v === null) ? (I18N.zh[key] !== undefined ? I18N.zh[key] : key) : v;
+}
+function fill(str, map) {
+  return String(str).replace(/\{(\w+)\}/g, (m, k) => (map[k] !== undefined ? map[k] : m));
+}
+
 
 const IDLE_RPM = 600;
 const MAX_RPM = 2400;
@@ -1590,19 +1939,25 @@ const statText = document.getElementById('statText'),
       gpsVal = document.getElementById('gpsVal'),
       gpsLed = document.getElementById('gpsLed');
 
-const STATUS_IDLE = '熄火 · 按住拖拉机摇车启动';
+const STATUS_IDLE = () => t('statusIdle');
 let statTimer = null;
+let lastStatus = { key: 'statusIdle', map: null, cls: '', temp: 0 };
 function setStatus(text, cls, tempMs) {
   clearTimeout(statTimer);
   statText.textContent = text;
   statText.className = 'stat' + (cls ? ' ' + cls : '');
   if (tempMs) {
-    statTimer = setTimeout(() => { statText.textContent = STATUS_IDLE; statText.className = 'stat'; }, tempMs);
+    statTimer = setTimeout(() => { statText.textContent = STATUS_IDLE(); statText.className = 'stat'; }, tempMs);
   }
+}
+/* 带 key 的 setStatus：切换语言时能按 key 重新渲染 */
+function setStatusK(key, map, cls, tempMs) {
+  lastStatus = { key: key, map: map || null, cls: cls || '', temp: tempMs || 0 };
+  setStatus(map ? fill(t(key), map) : t(key), cls, tempMs);
 }
 
 function refreshHud() {
-  thrHud.textContent = state.gpsMode ? 'GPS 驱动' : '油门 ' + state.throttle + '%';
+  thrHud.textContent = state.gpsMode ? t('hudGpsDrive') : fill(t('hudThrottle'), { n: state.throttle });
   gpsVal.textContent = 'GPS ' + (state.gpsState === 'connected' ? state.kmh.toFixed(1) : '--.-');
   gpsLed.className = 'led ' + (
     state.gpsState === 'connected' ? 'green' :
@@ -1626,34 +1981,34 @@ function tractorDown(e) {
       // 设备没有 WebAudio，点不动
       stage.classList.remove('cranking');
       pressing = false;
-      setStatus('当前环境不支持音频播放', 'fail', 2500);
+      setStatus(t('stNoAudio'), 'fail', 2500);
       return;
     }
     engine.onCatch = () => {
-      setStatus('着火了！燃烧不稳…');
+      setStatusK('stCatching');
       try { navigator.vibrate && navigator.vibrate(40); } catch (err) {}
     };
     engine.onRun = () => {
       stage.classList.remove('cranking');
       pressing = false;
-      setStatus(state.gpsMode ? 'GPS 跟速运转中' : '运转中 · 点一下熄火');
+      setStatusK(state.gpsMode ? 'stRunningGps' : 'stRunning');
     };
     engine.onFail = () => {
       stage.classList.remove('cranking');
       pressing = false;
-      setStatus('启动失败！再来一次', 'fail', 2500);
+      setStatus(t('stFail'), 'fail', 2500);
       try { navigator.vibrate && navigator.vibrate([70, 50, 70]); } catch (err) {}
     };
     engine.onDie = () => {
       stage.classList.remove('cranking');
       pressing = false;
-      if (!statTimer) setStatus(STATUS_IDLE);
+      if (!statTimer) setStatus(STATUS_IDLE());
     };
-    setStatus('摇车中… 咔哒—嗤—咚');
+    setStatusK('stCranking');
   } else if (engine.state === 'running' || engine.state === 'catching' || engine.state === 'stopping') {
     // 运转中点按 = 熄火
     engine.requestStop();
-    setStatus('正在熄火…');
+    setStatusK('stStopping');
   }
   refreshHud();
 }
@@ -1664,7 +2019,7 @@ function tractorUp() {
     // 没摇到火就松手
     stage.classList.remove('cranking');
     engine.abortCrank();
-    setStatus('没摇着 · 按住别松手再试', 'fail', 2200);
+    setStatus(t('stNoStart'), 'fail', 2200);
   }
   refreshHud();
 }
@@ -2005,16 +2360,16 @@ function setGpsMode(on) {
   throttleEl.disabled = on;
   if (on) {
     startGps();
-    setStatus('GPS 跟速模式 · 速度驱动声浪');
+    setStatusK('stGpsOn');
   } else {
     stopGps(true);
-    setStatus('手动油门模式 · 拖动滑条加速');
+    setStatusK('stGpsOff');
   }
   refreshHud();
 }
 gpsSwitch.addEventListener('click', () => {
   if (privacyMode === 'manual') {
-    showToast('你选择了「仅手动模式」，不会调用定位。想用 GPS 跟速：点「关于」→「查看隐私政策 / 重新授权」');
+    showToast(t('toastGpsLocked'));
     return;
   }
   setGpsMode(!state.gpsMode);
@@ -2025,7 +2380,7 @@ function startGps() {
   if (state.gpsWatchId !== null) return;
   if (!navigator.geolocation) {
     state.gpsState = 'error';
-    setStatus('设备不支持定位', 'fail', 2500);
+    setStatus(t('stGpsUnsupported'), 'fail', 2500);
     setGpsMode(false);
     refreshHud();
     return;
@@ -2034,7 +2389,7 @@ function startGps() {
   refreshHud();
   state.gpsWatchId = navigator.geolocation.watchPosition(onLocation, () => {
     state.gpsState = 'error';
-    setStatus('GPS 信号失败 · 请检查定位授权', 'fail', 3000);
+    setStatus(t('stGpsFail'), 'fail', 3000);
     setGpsMode(false);
     refreshHud();
   }, { enableHighAccuracy: true, maximumAge: 500, timeout: 15000 });
@@ -2096,16 +2451,7 @@ const tipQuip = document.getElementById('tipQuip');
 const tipAmts = document.getElementById('tipAmts');
 const tipToast = document.getElementById('tipToast');
 const TIP_FILES = { wx: 'assets/tip_wechat.jpg', zfb: 'assets/tip_alipay.jpg' };
-const TIP_AMTS = [
-  { label: '¥1<b>一升柴油</b>',
-    quip: '够拖拉机打个哈欠。它会突突两声表示感谢——就两声，很傲娇。' },
-  { label: '¥3<b>半根火腿肠</b>',
-    quip: '拖拉机不吃这个，但开拖拉机的这位师傅吃，并表示很感动。' },
-  { label: '¥5<b>一桶机油</b>',
-    quip: '喝完这桶，爬坡不喘、拉砖不抖，排出的烟都自带香味（并不会）。' },
-  { label: '<b>领导随意</b>',
-    quip: '金额自己填：一分是缘分，五毛是友情，一块以上就是过命的交情。' }
-];
+function TIP_AMTS() { return t('amts') || []; }
 let tipAmt = 1, tipTab = 'wx', toastTimer = null;
 
 function showToast(msg) {
@@ -2114,17 +2460,28 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => tipToast.classList.remove('show'), 3400);
 }
-function setTab(t) {
-  tipTab = t;
+function setTab(tab) {
+  tipTab = tab;
   const wx = document.getElementById('tabWx'), zfb = document.getElementById('tabZfb');
-  wx.classList.toggle('on', t === 'wx'); wx.classList.toggle('wx', t === 'wx');
-  zfb.classList.toggle('on', t === 'zfb'); zfb.classList.toggle('zfb', t === 'zfb');
-  tipQrImg.src = TIP_FILES[t];
+  wx.classList.toggle('on', tab === 'wx'); wx.classList.toggle('wx', tab === 'wx');
+  zfb.classList.toggle('on', tab === 'zfb'); zfb.classList.toggle('zfb', tab === 'zfb');
+  tipQrImg.src = TIP_FILES[tab];
 }
 function setAmt(i) {
-  tipAmt = i;
-  Array.prototype.forEach.call(tipAmts.children, (b, k) => b.classList.toggle('on', k === i));
-  tipQuip.textContent = TIP_AMTS[i].quip;
+  const list = TIP_AMTS();
+  tipAmt = Math.max(0, Math.min(i, list.length - 1));
+  Array.prototype.forEach.call(tipAmts.children, (b, k) => b.classList.toggle('on', k === tipAmt));
+  tipQuip.textContent = list[tipAmt] ? list[tipAmt].quip : '';
+}
+function renderTipAmts() {
+  tipAmts.innerHTML = '';
+  TIP_AMTS().forEach((a, i) => {
+    const b = document.createElement('button');
+    b.innerHTML = a.label;
+    b.addEventListener('click', () => setAmt(i));
+    tipAmts.appendChild(b);
+  });
+  setAmt(tipAmt);
 }
 function openTip(auto) {
   document.getElementById('tipFree').classList.toggle('show', !!auto);
@@ -2139,24 +2496,19 @@ document.getElementById('tipClose').addEventListener('click', closeTip);
 tipMask.addEventListener('click', e => { if (e.target === tipMask) closeTip(); });
 document.getElementById('tabWx').addEventListener('click', () => setTab('wx'));
 document.getElementById('tabZfb').addEventListener('click', () => setTab('zfb'));
-TIP_AMTS.forEach((a, i) => {
-  const b = document.createElement('button');
-  b.innerHTML = a.label;
-  b.addEventListener('click', () => setAmt(i));
-  tipAmts.appendChild(b);
-});
+renderTipAmts();
 
 document.getElementById('tipSaveBtn').addEventListener('click', () => {
   const name = TIP_FILES[tipTab].split('/').pop();
   if (window.TipBridge && typeof TipBridge.saveTipQr === 'function') {
     const r = String(TipBridge.saveTipQr(name));
     if (r.indexOf('ok:') === 0) {
-      showToast('已存进相册「手扶拖拉机」文件夹 ✅\n打开微信/支付宝 → 扫一扫 → 右上角「相册」选它');
+      showToast(t('toastSaved'));
     } else {
-      showToast('保存失败：' + r.slice(4) + '\n长按上方二维码图片也能保存/识别');
+      showToast(fill(t('toastSaveFail'), { e: r.slice(4) }));
     }
   } else {
-    showToast('长按上方二维码图片 →「保存图片」或「识别二维码」\n然后去微信/支付宝扫它');
+    showToast(t('toastLongPress'));
   }
 });
 
@@ -2164,13 +2516,13 @@ document.getElementById('tipPaidBtn').addEventListener('click', () => {
   try { localStorage.setItem('jt_gold', '1'); } catch (e) {}
   applyGoldEgg();
   closeTip();
-  showToast('🎖️ 恭喜解锁【镀金尊享版】！\n拖拉机连夜给自己喷了金粉，快去看它的烟！');
+  showToast(t('toastGold'));
 });
 
 /* ---- 金主彩蛋：金拖拉机 + 黄金烟 + 排气火星 ---- */
 function applyGoldEgg() {
   document.body.classList.add('gold');
-  document.title = '👑 手扶拖拉机声浪模拟器（金主尊享版）';
+  document.title = t('docGold');
 }
 try { if (localStorage.getItem('jt_gold') === '1') applyGoldEgg(); } catch (e) {}
 
@@ -2204,7 +2556,7 @@ document.getElementById('aboutDone').addEventListener('click', closeAbout);
 aboutMask.addEventListener('click', e => { if (e.target === aboutMask) closeAbout(); });
 
 document.getElementById('aboutCopy').addEventListener('click', () => {
-  const okMsg = '邮箱已复制：' + DEV_MAIL + '\n欢迎来信聊拖拉机、提需求、或者单纯夸它两声';
+  const okMsg = fill(t('toastCopied'), { m: DEV_MAIL });
   const fallback = () => {
     try {
       const ta = document.createElement('textarea');
@@ -2217,7 +2569,7 @@ document.getElementById('aboutCopy').addEventListener('click', () => {
       document.body.removeChild(ta);
       showToast(okMsg);
     } catch (e) {
-      showToast('复制没成功，手动记一下：' + DEV_MAIL);
+      showToast(fill(t('toastCopyFail'), { m: DEV_MAIL }));
     }
   };
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2237,13 +2589,17 @@ let privacyMode = 'full';      // 'full' 允许定位 | 'manual' 仅手动模式
 function readPriv() {
   try { return localStorage.getItem(PRIV_KEY) || ''; } catch (e) { return ''; }
 }
+function updateGpsLabel() {
+  const lab = document.querySelector('#gpsSwitch .lab');
+  if (lab) lab.textContent = t('gps') + (privacyMode === 'manual' ? ' · ' + t('gpsOffTag') : '');
+}
 function applyPrivacyMode(mode) {
   privacyMode = (mode === 'manual') ? 'manual' : 'full';
   document.body.classList.toggle('no-gps', privacyMode === 'manual');
+  updateGpsLabel();
   if (privacyMode === 'manual') stopGps(true);
   if (privState) {
-    privState.textContent = privacyMode === 'manual'
-      ? '仅手动模式（已拒绝定位）' : '已同意隐私政策';
+    privState.textContent = privacyMode === 'manual' ? t('privManual') : t('privAgreed');
   }
 }
 function openPrivacy() {
@@ -2256,13 +2612,124 @@ function acceptPrivacy(mode) {
   try { localStorage.setItem(PRIV_KEY, mode); } catch (e) {}
   applyPrivacyMode(mode);
   closePrivacy();
-  showToast(mode === 'manual'
-    ? '已选择仅手动模式 · 全部功能可用，不会开启定位'
-    : '已同意隐私政策 · 定位仅在开启 GPS 跟速时使用');
+  showToast(t(mode === 'manual' ? 'toastPrivManual' : 'toastPrivAgree'));
 }
 document.getElementById('privAgree').addEventListener('click', () => acceptPrivacy('full'));
 document.getElementById('privManual').addEventListener('click', () => acceptPrivacy('manual'));
 document.getElementById('privReopen').addEventListener('click', openPrivacy);
+
+/* ================= 语言应用 ================= */
+const LANG_KEY = 'jt_lang';
+function detectLang() {
+  let saved = '';
+  try { saved = localStorage.getItem(LANG_KEY) || ''; } catch (e) {}
+  if (LANGS.indexOf(saved) >= 0) return saved;
+  const nav = (navigator.language || navigator.userLanguage || 'zh').toLowerCase();
+  if (nav.indexOf('ko') === 0) return 'ko';
+  if (nav.indexOf('ja') === 0) return 'ja';
+  if (nav.indexOf('en') === 0) return 'en';
+  return 'zh';
+}
+function setText(sel, val) {
+  const el = document.querySelector(sel);
+  if (el && val != null) el.textContent = val;
+}
+function setHTML(sel, val) {
+  const el = document.querySelector(sel);
+  if (el && val != null) el.innerHTML = val;
+}
+function renderPrivBody() {
+  const list = (I18N[LANG] && I18N[LANG].privSections) || I18N.zh.privSections;
+  privScroll.innerHTML = list.map(function (sec) {
+    return '<h3>' + sec.h + '</h3><p>' + sec.p + '</p>';
+  }).join('');
+}
+function applyLang(lang) {
+  LANG = (LANGS.indexOf(lang) >= 0) ? lang : 'zh';
+  document.documentElement.lang = (LANG === 'zh' ? 'zh-CN' : LANG);
+
+  const cur = document.getElementById('langCur');
+  if (cur) cur.textContent = LANG_LABEL[LANG];
+  Array.prototype.forEach.call(document.querySelectorAll('#langMenu button'), function (b) {
+    b.classList.toggle('on', b.getAttribute('data-lang') === LANG);
+  });
+
+  /* 头部 / 仪表 / HUD / 控件 */
+  document.title = (document.body.classList.contains('gold') ? t('docGold') : t('appTitle'));
+  setText('.title h1', t('appTitle'));
+  setText('.gauge.speed .g-head span:first-child', t('speed'));
+  setText('.gauge.rpm .g-head span:first-child', t('rpm'));
+  updateGpsLabel();
+  setText('.throttle-head span:first-child', t('throttle'));
+  setText('.hint', t('hint'));
+  setText('#footNote', t('foot'));
+  setText('#aboutBtn', t('about'));
+  setText('#tipBtn', t('tipBtn'));
+
+  /* 关于弹窗 */
+  setText('#abTitle', t('abTitle'));
+  setText('#abName', t('appTitle'));
+  setText('#abSub', t('abSub'));
+  setText('#abIntroH', t('abIntroH'));
+  setText('#abIntroP', t('abIntroP'));
+  setText('#abDiscH', t('abDiscH'));
+  const list = t('abDisc');
+  document.getElementById('abDiscList').innerHTML =
+    (list && list.length ? list : []).map(function (x) { return '<li>' + x + '</li>'; }).join('');
+  setText('#abContactH', t('abContactH'));
+  setText('#aboutCopy', t('aboutCopy'));
+  setText('#abContactNote', t('abContactNote'));
+  setText('#abPrivH', t('abPrivH'));
+  setText('#abPrivP', t('abPrivP'));
+  setText('#abPrivStateL', t('abPrivStateL'));
+  setText('#privReopen', t('abPrivBtn'));
+  setText('#aboutDone', t('aboutDone'));
+  setText('#abCopy', t('abCopy'));
+
+  /* 打赏弹窗 */
+  setHTML('#tipFree', t('tipFree'));
+  setText('#tipTitle', t('tipTitle'));
+  setText('#tipSub', t('tipSub'));
+  setText('#tabWx', t('tabWx'));
+  setText('#tabZfb', t('tabZfb'));
+  setText('#tipSaveBtn', t('tipSave'));
+  setText('#tipPaidBtn', t('tipPaid'));
+  setHTML('#tipNote', t('tipNote'));
+  renderTipAmts();
+
+  /* 隐私弹窗 */
+  setText('#privTitle', t('privTitle'));
+  setText('#privHint', t('privHint'));
+  setText('#privManual', t('privManualBtn'));
+  setText('#privAgree', t('privAgree'));
+  renderPrivBody();
+
+  /* 动态状态 */
+  if (privState) privState.textContent = (privacyMode === 'manual') ? t('privManual') : t('privAgreed');
+  if (engine.state === 'running') setStatusK(state.gpsMode ? 'stRunningGps' : 'stRunning');
+  else if (engine.state === 'off' || engine.state === 'stopping') setStatus(STATUS_IDLE());
+  else setStatusK(lastStatus.key, lastStatus.map);
+  refreshHud();
+}
+
+/* 语言切换交互 */
+const langBtn = document.getElementById('langBtn');
+const langMenu = document.getElementById('langMenu');
+langBtn.addEventListener('click', function (e) {
+  e.stopPropagation();
+  langMenu.classList.toggle('show');
+});
+Array.prototype.forEach.call(langMenu.querySelectorAll('button'), function (b) {
+  b.addEventListener('click', function () {
+    let l = b.getAttribute('data-lang');
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
+    langMenu.classList.remove('show');
+    applyLang(l);
+  });
+});
+document.addEventListener('click', function (e) {
+  if (!langMenu.contains(e.target) && e.target !== langBtn) langMenu.classList.remove('show');
+});
 
 /* 首次启动必须让用户阅读并选择，不做遮罩可关闭 */
 (function initPrivacy() {
@@ -2270,6 +2737,9 @@ document.getElementById('privReopen').addEventListener('click', openPrivacy);
   if (!v) openPrivacy();
   else applyPrivacyMode(v);
 })();
+
+/* 应用语言（放最后，保证所有 DOM 与函数就绪） */
+applyLang(detectLang());
 </script>
 </body>
 </html>
