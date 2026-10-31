@@ -4,7 +4,7 @@
 
 纯前端单页 · 无需构建 · 完全离线 · 无账号 · 无广告 · 不采集任何个人信息 · 中 / 英 / 日 / 韩四语界面
 
-**[▶ 在线试玩](https://<你的GitHub用户名>.github.io/tractor-sound/) ｜ [⬇ 下载 APK](https://github.com/<你的GitHub用户名>/tractor-sound/releases/latest)**
+**[▶ 在线试玩](https://dongchen.jin.github.io/tractor-sound/) ｜ [⬇ 下载 APK](https://github.com/dongchenjin/tractor-sound/releases/latest)**
 
 > 上面两个链接里的 `<你的GitHub用户名>` 首次建仓后替换成你的用户名即可。
 
@@ -37,7 +37,7 @@
 
 ### 在线玩
 
-直接打开 <https://<你的GitHub用户名>.github.io/tractor-sound/>
+直接打开 <https://dongchenjin.github.io/tractor-sound/>
 
 手机上建议「添加到主屏幕」，全屏无地址栏，跟 App 一模一样：
 
@@ -48,14 +48,14 @@
 
 ### 安装 APK（Android）
 
-前往 [Releases](https://github.com/<你的GitHub用户名>/tractor-sound/releases/latest) 下载 `手扶拖拉机声浪.apk` 安装即可（约 940KB，Android 7.0+）。
+前往 [Releases](https://github.com/dongchen.jin/tractor-sound/releases/latest) 下载 `手扶拖拉机声浪.apk` 安装即可（约 940KB，Android 7.0+）。
 
 首次安装需在系统里允许「安装未知来源应用」。网页版和 APK 是同一份代码，功能完全一致，APK 只是多了个桌面图标。
 
 ### 本地跑
 
 ```bash
-git clone https://github.com/<你的GitHub用户名>/tractor-sound.git
+git clone https://github.com/dongchenjin/tractor-sound.git
 cd tractor-sound
 python -m http.server 8000
 # 打开 http://localhost:8000
